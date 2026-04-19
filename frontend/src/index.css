@@ -1,0 +1,59 @@
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Paleta principal — verde agrícola profundo */
+  --verde-oscuro:   #1a3a2a;
+  --verde-medio:    #2d5a3d;
+  --verde-acento:   #3d7a52;
+  --verde-claro:    #5fa876;
+  --verde-suave:    #e8f5ee;
+  --verde-borde:    #c8e6d4;
+
+  /* Neutros */
+  --blanco:         #fafdf8;
+  --gris-100:       #f4f7f5;
+  --gris-200:       #e2e8e4;
+  --gris-400:       #9aada2;
+  --gris-600:       #5c6e65;
+  --gris-800:       #2e3d35;
+  --negro:          #111916;
+
+  /* Semáforo */
+  --rojo:           #c0392b;
+  --rojo-suave:     #fdecea;
+  --naranja:        #d68910;
+  --naranja-suave:  #fef9e7;
+  --exito:          #27ae60;
+  --exito-suave:    #eafaf1;
+
+  /* Tipografía */
+  --font-display:   'DM Serif Display', Georgia, serif;
+  --font-body:      'DM Sans', system-ui, sans-serif;
+
+  /* Sombras */
+  --sombra-sm:      0 1px 3px rgba(26,58,42,0.08), 0 1px 2px rgba(26,58,42,0.04);
+  --sombra-md:      0 4px 16px rgba(26,58,42,0.10), 0 2px 6px rgba(26,58,42,0.06);
+  --sombra-lg:      0 12px 40px rgba(26,58,42,0.14), 0 4px 12px rgba(26,58,42,0.08);
+
+  /* Radio */
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+
+  --transition: 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+html { font-size: 16px; }
+
+body {
+  font-family: var(--font-body);
+  background: var(--blanco);
+  color: var(--negro);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+button { cursor: pointer; font-family: inherit; }
+input, textarea, select { font-family: inherit; }
+a { color: inherit; text-decoration: none; }
