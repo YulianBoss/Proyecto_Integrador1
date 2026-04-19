@@ -43,30 +43,6 @@ function IcoFolder() { return <svg viewBox="0 0 24 24" {...S}><path d="M22 19a2 
 function IcoClock()  { return <svg viewBox="0 0 24 24" {...S}><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> }
 function IcoCheck()  { return <svg viewBox="0 0 24 24" {...S}><polyline points="20 6 9 17 4 12"/></svg> }
 function IcoWarn()   { return <svg viewBox="0 0 24 24" {...S}><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg> }
-function IcoDoc()    { return <svg viewBox="0 0 24 24" {...S}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg> }
-function IcoPlus()   { return <svg viewBox="0 0 24 24" {...S}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> }
-function IcoArrow()  { return <svg viewBox="0 0 24 24" {...S}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg> }
-
-function Badge({ estado }) {
-  const mapa = {
-    activo: 'activo', pendiente: 'pendiente',
-    en_proceso: 'proceso', completada: 'completada',
-    cosechado: 'cosechado', inactivo: 'inactivo', en_preparacion: 'preparacion'
-  }
-  const texto = {
-    activo: 'Activo', pendiente: 'Pendiente',
-    en_proceso: 'En Proceso', completada: 'Completada',
-    cosechado: 'Cosechado', inactivo: 'Inactivo', en_preparacion: 'En Preparacion'
-  }
-  return <span className={`p-badge p-badge--${mapa[estado] || 'inactivo'}`}>{texto[estado] || estado}</span>
-}
-
-function IncidenciaTag({ valor }) {
-  if (!valor && valor !== 0) return <span className="p-td-muted">—</span>
-  const n = parseFloat(valor)
-  const cls = n >= 20 ? 'p-inci-alto' : n >= 10 ? 'p-inci-medio' : 'p-inci-bajo'
-  return <span className={cls}>{n.toFixed(1)}%</span>
-}
 
 export default function ProductorDashboard() {
   const { user } = useAuth()
@@ -97,7 +73,6 @@ export default function ProductorDashboard() {
   const totalLotes      = lugares.reduce((a, l) => a + (l.lotes?.length || 0), 0)
   const pendientes      = inspecciones.filter(i => i.estado === 'pendiente').length
   const completadas     = inspecciones.filter(i => i.estado === 'completada').length
-  const ultimas5        = [...inspecciones].slice(0, 5)
 
   // Alerta: inspeccion proxima vencida (simulada por fecha_proxima_inspeccion)
   const alertas = lugares.filter(l => {
@@ -191,142 +166,6 @@ export default function ProductorDashboard() {
             <div className="p-stat-label">Inspecciones Completadas</div>
             <span className="p-stat-sub p-stat-sub--green">Historial</span>
           </div>
-        </div>
-      </div>
-
-      {/* Ultimas inspecciones */}
-      <div className="p-section">
-        <div className="p-section__header">
-          <div>
-            <h3>Ultimas Inspecciones</h3>
-            <p>Estado actual de sus solicitudes de inspeccion</p>
-          </div>
-          <Link to="/productor/solicitar" className="p-btn p-btn--green p-btn--sm">
-            <IcoPlus /> Solicitar nueva
-          </Link>
-        </div>
-        <div className="p-section__body">
-          {ultimas5.length === 0 ? (
-            <div className="p-empty">
-              <IcoDoc />
-              <p>No hay inspecciones registradas aun.</p>
-              <Link to="/productor/solicitar" className="p-btn p-btn--green p-btn--sm">
-                Solicitar la primera
-              </Link>
-            </div>
-          ) : (
-            <div className="p-table-wrap">
-              <table className="p-table">
-                <thead>
-                  <tr>
-                    <th>Lugar</th>
-                    <th>Fecha solicitud</th>
-                    <th>Tecnico asignado</th>
-                    <th>Estado</th>
-                    <th>Accion</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {ultimas5.map(ins => (
-                    <tr key={ins.id}>
-                      <td><strong>Lugar #{ins.lugar_produccion_id}</strong></td>
-                      <td className="p-td-muted">
-                        {ins.fecha_solicitud
-                          ? new Date(ins.fecha_solicitud).toLocaleDateString('es-CO')
-                          : '—'}
-                      </td>
-                      <td className="p-td-muted">
-                        {ins.asistente_id ? `Tecnico #${ins.asistente_id}` : '— Sin asignar'}
-                      </td>
-                      <td><Badge estado={ins.estado} /></td>
-                      <td>
-                        {ins.estado === 'completada' ? (
-                          <Link to="/productor/historial" className="p-btn p-btn--blue p-btn--sm">
-                            <IcoDoc /> Ver informe
-                          </Link>
-                        ) : (
-                          <Link to="/productor/historial" className="p-btn p-btn--outline p-btn--sm">
-                            <IcoArrow /> Seguimiento
-                          </Link>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Mis lugares — resumen rapido */}
-      <div className="p-section">
-        <div className="p-section__header">
-          <div>
-            <h3>Mis Lugares de Produccion</h3>
-            <p>Vista rapida de sus predios registrados</p>
-          </div>
-          <Link to="/productor/lugares" className="p-btn p-btn--outline p-btn--sm">
-            Ver todos <IcoArrow />
-          </Link>
-        </div>
-        <div className="p-section__body">
-          {lugares.length === 0 ? (
-            <div className="p-empty">
-              <IcoHome />
-              <p>No tiene lugares registrados.</p>
-              <Link to="/productor/lugares" className="p-btn p-btn--green p-btn--sm">
-                Registrar primer lugar
-              </Link>
-            </div>
-          ) : (
-            <div className="p-table-wrap">
-              <table className="p-table">
-                <thead>
-                  <tr>
-                    <th>Lugar</th>
-                    <th>Municipio</th>
-                    <th>Area (ha)</th>
-                    <th>Registro ICA</th>
-                    <th>Proxima inspeccion</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {lugares.slice(0, 5).map(l => {
-                    const proxima    = l.fecha_proxima_inspeccion ? new Date(l.fecha_proxima_inspeccion) : null
-                    const dias       = proxima ? Math.ceil((proxima - new Date()) / 86400000) : null
-                    const proximaCls = dias !== null && dias <= 0
-                      ? 'p-inci-alto'
-                      : dias !== null && dias <= 7
-                      ? 'p-inci-medio'
-                      : 'p-inci-bajo'
-
-                    return (
-                      <tr key={l.id}>
-                        <td><strong>{l.nombre}</strong></td>
-                        <td className="p-td-muted">{l.municipio}</td>
-                        <td className="p-td-muted">{l.area_total_ha} ha</td>
-                        <td className="p-td-muted">{l.numero_registro_ica}</td>
-                        <td>
-                          {proxima
-                            ? <span className={proximaCls}>{proxima.toLocaleDateString('es-CO')}</span>
-                            : <span className="p-td-muted">—</span>}
-                        </td>
-                        <td>
-                          <div className="p-actions">
-                            <Link to="/productor/lugares" className="p-btn p-btn--outline p-btn--sm">
-                              Ver
-                            </Link>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
       </div>
     </div>
