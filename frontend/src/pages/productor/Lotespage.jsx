@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { productionAPI, lotesAPI, cultivosAPI, especiesAPI } from '../../services/api'
+import { productionAPI, prediosAPI, lotesAPI, cultivosAPI, especiesAPI } from '../../services/api'
 import './productor.css'
 
 const S = { fill:'none', stroke:'currentColor', strokeWidth:'1.8', strokeLinecap:'round', strokeLinejoin:'round' }
@@ -15,6 +15,14 @@ const IcoLeaf   = () => <svg viewBox="0 0 24 24" {...S}><path d="M12 2C8 6 6 10 
 const IcoSearch = () => <svg viewBox="0 0 24 24" {...S}><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
 
 const ESTADOS_LOTE = ['activo', 'inactivo', 'en_preparacion', 'cosechado']
+const ESTADOS_INICIALES_LOTE = ['activo', 'en_preparacion', 'inactivo']
+
+const normalize = (v) =>
+  String(v || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .trim()
+    .toLowerCase()
 
 function Badge({ estado }) {
   const m = { activo:'activo', inactivo:'inactivo', cosechado:'cosechado', en_preparacion:'preparacion' }
@@ -38,11 +46,13 @@ function Modal({ title, onClose, children, wide }) {
 
 export default function LotesPage() {
   const [lugares, setLugares]         = useState([])
+  const [predios, setPredios]         = useState([])
   const [lugarSel, setLugarSel]       = useState('')
   const [lotes, setLotes]             = useState([])
   const [cultivos, setCultivos]       = useState({})
   const [loading, setLoading]         = useState(false)
   const [loadLugares, setLoadLugares] = useState(true)
+  const [loadPredios, setLoadPredios] = useState(true)
   const [error, setError]             = useState('')
   const [toast, setToast]             = useState(null)
   const [procesando, setProcesando]   = useState(false)
@@ -57,11 +67,13 @@ export default function LotesPage() {
 
   // Formulario nuevo lote
   const [formNuevo, setFormNuevo] = useState({ codigo:'', area_ha:'', estado:'activo' })
+  const [erroresNuevo, setErroresNuevo] = useState({})
   // Formulario editar
-  const [formEditar, setFormEditar] = useState({ area_ha:'' })
+  const [formEditar, setFormEditar] = useState({ area_ha:'', predio_id:'', estado:'' })
   // Cambiar estado
   const [nuevoEstado, setNuevoEstado] = useState('')
   const [obsEstado, setObsEstado]     = useState('')
+  const [errDelModal, setErrDelModal] = useState('')
 
   // Modal cultivo
   const [showCultivo, setShowCultivo] = useState(null)
@@ -70,6 +82,8 @@ export default function LotesPage() {
   const [busqEspecie, setBusqEspecie] = useState('')
   const [loadEspecies, setLoadEspecies] = useState(false)
 
+  const lugarActual = lugares.find(l => String(l.id) === String(lugarSel))
+  const lugarHabilitado = lugarActual?.estado === 'activo'
   const toast_ = (msg, tipo = 'ok') => {
     setToast({ msg, tipo })
     setTimeout(() => setToast(null), 3500)
@@ -81,6 +95,11 @@ export default function LotesPage() {
       .then(r => { setLugares(r.data || []); if ((r.data||[]).length > 0) setLugarSel(String(r.data[0].id)) })
       .catch(() => setError('No se pudieron cargar los lugares.'))
       .finally(() => setLoadLugares(false))
+
+    prediosAPI.getAll()
+      .then(r => setPredios(r.data || []))
+      .catch(() => setError('No se pudieron cargar los predios del ICA.'))
+      .finally(() => setLoadPredios(false))
   }, [])
 
   // Cargar lotes
@@ -106,29 +125,62 @@ export default function LotesPage() {
 
   // ── CRUD lotes ──────────────────────────────────────────────
   const crearLote = async () => {
-    if (!formNuevo.codigo || !formNuevo.area_ha) { toast_('Codigo y hectareas son obligatorios.', 'error'); return }
-    if (parseFloat(formNuevo.area_ha) <= 0)      { toast_('El area debe ser mayor a cero.', 'error'); return }
+    // E1: lugar no seleccionado
+    if (!lugarSel) {
+      toast_('Debes seleccionar un lugar de produccion valido antes de registrar un lote.', 'error')
+      return
+    }
+    // E2/E3: validacion por campo
+    const errs = {}
+    if (!formNuevo.codigo?.trim()) {
+      errs.codigo = 'El codigo del lote es obligatorio'
+    }
+    const areaNum = Number(formNuevo.area_ha)
+    if (!formNuevo.area_ha || isNaN(areaNum) || areaNum <= 0) {
+      errs.area_ha = 'Ingresa una extension numerica mayor a cero (ej: 1.5)'
+    }
+    if (Object.keys(errs).length > 0) { setErroresNuevo(errs); return }
+
     setProcesando(true)
     try {
-      await lotesAPI.create({ ...formNuevo, lugar_produccion_id: parseInt(lugarSel) })
+      await lotesAPI.create({ codigo: formNuevo.codigo.trim(), area_ha: formNuevo.area_ha, estado: formNuevo.estado, lugar_produccion_id: parseInt(lugarSel) })
       toast_('Lote creado correctamente.')
       setShowFormNuevo(false)
       setFormNuevo({ codigo:'', area_ha:'', estado:'activo' })
+      setErroresNuevo({})
       cargarLotes()
     } catch (err) {
-      toast_(err.response?.data?.message || 'Error al crear lote.', 'error')
+      const msg = err.response?.data?.message || ''
+      if (/c.digo|codigo|ya existe/i.test(msg)) {
+        setErroresNuevo(p => ({ ...p, codigo: msg }))                         // E2
+      } else if (/área|area|extensi|hectar/i.test(msg)) {
+        setErroresNuevo(p => ({ ...p, area_ha: msg }))                        // E3
+      } else {
+        toast_(msg || 'No fue posible crear el lote. Intenta nuevamente.', 'error')
+      }
     } finally { setProcesando(false) }
   }
 
   const guardarEdicion = async () => {
     if (!formEditar.area_ha || parseFloat(formEditar.area_ha) <= 0) { toast_('El area debe ser mayor a cero.', 'error'); return }
+    if (!formEditar.predio_id) { toast_('Selecciona un predio asociado.', 'error'); return }
+    if (!formEditar.estado) { toast_('Selecciona un estado.', 'error'); return }
     setProcesando(true)
     try {
-      await lotesAPI.update(editando.id, { area_ha: formEditar.area_ha })
-      toast_('Lote actualizado.')
+      const payload = {
+        area_ha: formEditar.area_ha,
+        predio_id: Number(formEditar.predio_id),
+        estado: formEditar.estado,
+      }
+      // Solo enviamos observacion si cambió el estado
+      if (formEditar.estado !== editando.estado && formEditar.obsEditar) {
+        payload.observacion = formEditar.obsEditar
+      }
+      await lotesAPI.update(editando.id, payload)
+      toast_('Lote actualizado correctamente.')
       setEditando(null); cargarLotes()
     } catch (err) {
-      toast_(err.response?.data?.message || 'Error al actualizar.', 'error')
+      toast_(err.response?.data?.message || 'No fue posible guardar. Intenta nuevamente.', 'error')
     } finally { setProcesando(false) }
   }
 
@@ -148,11 +200,11 @@ export default function LotesPage() {
     setProcesando(true)
     try {
       await lotesAPI.delete(confirmDel.id)
-      toast_('Lote eliminado.')
-      setConfirmDel(null); cargarLotes()
+      toast_('Lote eliminado correctamente.')
+      setConfirmDel(null); setErrDelModal(''); cargarLotes()
     } catch (err) {
-      toast_(err.response?.data?.message || 'Error al eliminar.', 'error')
-      setConfirmDel(null)
+      // E5/E6: no cerrar modal, mostrar error inline con contexto
+      setErrDelModal(err.response?.data?.message || 'No fue posible eliminar el lote. Intenta nuevamente.')
     } finally { setProcesando(false) }
   }
 
@@ -222,15 +274,20 @@ export default function LotesPage() {
             <span className="p-td-muted">No tiene lugares registrados.</span>
           ) : (
             <select className="p-input" style={{ maxWidth:320 }} value={lugarSel} onChange={e => { setLugarSel(e.target.value); setShowFormNuevo(false) }}>
-              {lugares.map(l => <option key={l.id} value={l.id}>{l.nombre} — {l.municipio}</option>)}
+              {lugares.map(l => <option key={l.id} value={l.id}>{l.nombre} — {l.municipio} ({l.estado})</option>)}
             </select>
           )}
-          {lugarSel && (
-            <button className="p-btn p-btn--green p-btn--sm" onClick={() => { setShowFormNuevo(true); setEditando(null) }}>
+          {lugarSel && lugarHabilitado && (
+            <button className="p-btn p-btn--green p-btn--sm" onClick={() => { setShowFormNuevo(true); setEditando(null); setFormNuevo({ codigo:'', area_ha:'', estado:'activo' }); setErroresNuevo({}) }}>
               <IcoPlus /> Agregar lote
             </button>
           )}
         </div>
+        {lugarSel && !lugarHabilitado && lugarActual && (
+          <div className="p-alert p-alert--warn" style={{ width:'100%', marginBottom:0 }}>
+            <IcoAlert /> Este lugar está en estado <strong>{lugarActual.estado}</strong>. Solo cuando quede activo podrá registrar lotes.
+          </div>
+        )}
       </div>
 
       {/* Formulario nuevo lote */}
@@ -239,26 +296,52 @@ export default function LotesPage() {
           <div className="p-section__header"><h3>Nuevo lote</h3></div>
           <div className="p-section__body">
             <div className="p-form-grid">
+              {/* E2: codigo duplicado */}
               <div className="p-form-group">
                 <label className="p-label">Codigo del lote *</label>
-                <input className="p-input" value={formNuevo.codigo} onChange={e => setFormNuevo(p => ({...p, codigo:e.target.value}))} placeholder="Ej: A-01" />
+                <input
+                  className="p-input"
+                  style={erroresNuevo.codigo ? { borderColor:'#dc2626' } : undefined}
+                  value={formNuevo.codigo}
+                  onChange={e => { setFormNuevo(p => ({...p, codigo:e.target.value})); setErroresNuevo(p => ({...p, codigo:''})) }}
+                  placeholder="Ej: A-01"
+                />
+                {erroresNuevo.codigo && <span className="p-hint" style={{ color:'#dc2626' }}>{erroresNuevo.codigo}</span>}
               </div>
+              {/* E3: extension invalida o supera limite del lugar */}
               <div className="p-form-group">
                 <label className="p-label">Hectareas *</label>
-                <input className="p-input" type="number" min="0.01" step="0.01" value={formNuevo.area_ha} onChange={e => setFormNuevo(p => ({...p, area_ha:e.target.value}))} placeholder="0.00" />
+                <input
+                  className="p-input"
+                  style={erroresNuevo.area_ha ? { borderColor:'#dc2626' } : undefined}
+                  type="number" min="0.01" step="0.01"
+                  value={formNuevo.area_ha}
+                  onChange={e => { setFormNuevo(p => ({...p, area_ha:e.target.value})); setErroresNuevo(p => ({...p, area_ha:''})) }}
+                  placeholder="0.00"
+                />
+                {erroresNuevo.area_ha
+                  ? <span className="p-hint" style={{ color:'#dc2626' }}>{erroresNuevo.area_ha}</span>
+                  : lugarActual?.area_total_ha != null && (
+                    <span className="p-hint">La suma de todos los lotes no puede superar las {lugarActual.area_total_ha} ha del lugar de produccion.</span>
+                  )
+                }
               </div>
               <div className="p-form-group">
                 <label className="p-label">Estado inicial</label>
                 <select className="p-input" value={formNuevo.estado} onChange={e => setFormNuevo(p => ({...p, estado:e.target.value}))}>
-                  {ESTADOS_LOTE.map(e => <option key={e} value={e}>{e}</option>)}
+                  {ESTADOS_INICIALES_LOTE.map(e => <option key={e} value={e}>{{ activo:'Activo', inactivo:'Inactivo', en_preparacion:'En preparacion' }[e] || e}</option>)}
                 </select>
+              </div>
+              <div className="p-form-group p-form-group--full">
+                <label className="p-label">Cultivo actual (opcional)</label>
+                <span className="p-hint">Se registra despues desde Gestion de Cultivos.</span>
               </div>
             </div>
             <div className="p-form-actions">
               <button className="p-btn p-btn--green" onClick={crearLote} disabled={procesando}>
                 {procesando ? <><span className="p-spinner p-spinner--sm" /> Guardando...</> : <><IcoCheck /> Guardar lote</>}
               </button>
-              <button className="p-btn p-btn--outline" onClick={() => setShowFormNuevo(false)}>Cancelar</button>
+              <button className="p-btn p-btn--outline" onClick={() => { setShowFormNuevo(false); setFormNuevo({ codigo:'', area_ha:'', estado:'activo' }); setErroresNuevo({}) }}>Cancelar</button>
             </div>
           </div>
         </div>
@@ -281,7 +364,7 @@ export default function LotesPage() {
               <table className="p-table">
                 <thead>
                   <tr>
-                    <th>Codigo</th><th>Hectareas</th><th>Cultivo activo</th>
+                    <th>Codigo</th><th>Predio asociado</th><th>Hectareas</th><th>Cultivo activo</th>
                     <th>Estado</th><th>Fecha registro</th><th>Acciones</th>
                   </tr>
                 </thead>
@@ -292,6 +375,7 @@ export default function LotesPage() {
                     return (
                       <tr key={l.id}>
                         <td><strong>{l.codigo}</strong></td>
+                        <td className="p-td-muted">{l.predio_nombre || 'Sin predio'}</td>
                         <td className="p-td-muted">{l.area_ha} ha</td>
                         <td>
                           {cultActivo ? (
@@ -309,7 +393,7 @@ export default function LotesPage() {
                         <td>
                           <div className="p-actions">
                             <button className="p-btn p-btn--outline p-btn--sm" onClick={() => { setModalEstado(l); setNuevoEstado(l.estado); setObsEstado('') }}>Estado</button>
-                            <button className="p-btn p-btn--outline p-btn--sm" onClick={() => { setEditando(l); setFormEditar({ area_ha: l.area_ha }); setShowFormNuevo(false) }}><IcoEdit /></button>
+                            <button className="p-btn p-btn--outline p-btn--sm" onClick={() => { setEditando(l); setFormEditar({ area_ha: l.area_ha, predio_id: String(l.predio_id || ''), estado: l.estado, obsEditar: '' }); setShowFormNuevo(false) }}><IcoEdit /></button>
                             <button className="p-btn p-btn--outline p-btn--sm" onClick={() => verHistorial(l)}><IcoHist /></button>
                             <button className="p-btn p-btn--danger p-btn--sm" onClick={() => setConfirmDel(l)}><IcoTrash /></button>
                           </div>
@@ -324,21 +408,82 @@ export default function LotesPage() {
         </div>
       </div>
 
-      {/* Modal editar area */}
-      {editando && (
-        <Modal title={`Editar lote ${editando.codigo}`} onClose={() => setEditando(null)}>
-          <div className="p-form-group">
-            <label className="p-label">Hectareas *</label>
-            <input className="p-input" type="number" min="0.01" step="0.01" value={formEditar.area_ha} onChange={e => setFormEditar({ area_ha:e.target.value })} />
-          </div>
-          <div className="p-modal__actions">
-            <button className="p-btn p-btn--outline" onClick={() => setEditando(null)}>Cancelar</button>
-            <button className="p-btn p-btn--green" onClick={guardarEdicion} disabled={procesando}>
-              {procesando ? <><span className="p-spinner p-spinner--sm" /> Guardando...</> : <><IcoCheck /> Guardar</>}
-            </button>
-          </div>
-        </Modal>
-      )}
+      {/* Modal editar lote */}
+      {editando && (() => {
+        const prediosEdit = predios.filter((p) =>
+          normalize(p.departamento) === normalize(lugarActual?.departamento) &&
+          normalize(p.municipio) === normalize(lugarActual?.municipio)
+        )
+        const estadoCambio = formEditar.estado && formEditar.estado !== editando.estado
+        return (
+          <Modal title={`Editar lote — ${editando.codigo}`} onClose={() => setEditando(null)} wide>
+            <div className="p-form-grid">
+              <div className="p-form-group">
+                <label className="p-label">Extension en hectareas *</label>
+                <input
+                  className="p-input"
+                  type="number" min="0.01" step="0.01"
+                  value={formEditar.area_ha}
+                  onChange={e => setFormEditar(p => ({ ...p, area_ha: e.target.value }))}
+                />
+              </div>
+              <div className="p-form-group">
+                <label className="p-label">Predio asociado *</label>
+                <select
+                  className="p-input"
+                  value={formEditar.predio_id}
+                  onChange={e => setFormEditar(p => ({ ...p, predio_id: e.target.value }))}
+                  disabled={prediosEdit.length === 0}
+                >
+                  <option value="">-- Selecciona predio --</option>
+                  {prediosEdit.map((p) => (
+                    <option key={p.id} value={p.id}>{p.nombre_identificacion} — {p.vereda_direccion}</option>
+                  ))}
+                </select>
+                {prediosEdit.length === 0 && (
+                  <span className="p-hint">No hay predios disponibles para esta ubicacion.</span>
+                )}
+              </div>
+              <div className="p-form-group">
+                <label className="p-label">Estado *</label>
+                <select
+                  className="p-input"
+                  value={formEditar.estado}
+                  onChange={e => setFormEditar(p => ({ ...p, estado: e.target.value }))}
+                >
+                  {ESTADOS_LOTE.map(e => (
+                    <option key={e} value={e}>{{
+                      activo: 'Activo',
+                      inactivo: 'Inactivo',
+                      en_preparacion: 'En preparacion',
+                      cosechado: 'Cosechado'
+                    }[e] || e}</option>
+                  ))}
+                </select>
+              </div>
+              {estadoCambio && (
+                <div className="p-form-group p-form-group--full">
+                  <label className="p-label">Observacion del cambio de estado (opcional)</label>
+                  <textarea
+                    className="p-input p-textarea"
+                    rows={2}
+                    value={formEditar.obsEditar || ''}
+                    onChange={e => setFormEditar(p => ({ ...p, obsEditar: e.target.value }))}
+                    placeholder="Motivo del cambio..."
+                  />
+                  <span className="p-hint">El cambio de estado quedara registrado en el historial.</span>
+                </div>
+              )}
+            </div>
+            <div className="p-modal__actions">
+              <button className="p-btn p-btn--outline" onClick={() => setEditando(null)}>Cancelar</button>
+              <button className="p-btn p-btn--green" onClick={guardarEdicion} disabled={procesando}>
+                {procesando ? <><span className="p-spinner p-spinner--sm" /> Guardando...</> : <><IcoCheck /> Guardar cambios</>}
+              </button>
+            </div>
+          </Modal>
+        )
+      })()}
 
       {/* Modal cambiar estado */}
       {modalEstado && (
@@ -495,20 +640,33 @@ export default function LotesPage() {
         </Modal>
       )}
 
-      {/* Modal confirmar eliminacion */}
+      {/* Modal confirmar eliminacion — E6: cultivos activos */}
       {confirmDel && (
-        <Modal title="Confirmar eliminacion" onClose={() => setConfirmDel(null)}>
-          <p style={{ fontSize:'0.875rem', color:'#6b7280', lineHeight:1.55 }}>
-            Se eliminara el lote <strong>{confirmDel.codigo}</strong>.
-            Si tiene inspecciones asociadas no se puede eliminar y se sugiere cambiarlo a Inactivo.
-            Si tiene cultivos activos tampoco puede eliminarse.
-          </p>
-          <div className="p-modal__actions">
-            <button className="p-btn p-btn--outline" onClick={() => setConfirmDel(null)}>Cancelar</button>
-            <button className="p-btn p-btn--danger" onClick={eliminarLote} disabled={procesando}>
-              {procesando ? <><span className="p-spinner p-spinner--sm" /> Eliminando...</> : <><IcoTrash /> Confirmar</>}
-            </button>
-          </div>
+        <Modal title="Eliminar lote" onClose={() => { setConfirmDel(null); setErrDelModal('') }}>
+          {/* Error inline E6 */}
+          {errDelModal ? (
+            <>
+              <div className="p-alert p-alert--error" style={{ marginBottom:'1rem', lineHeight:1.6 }}>
+                <IcoAlert />
+                <span style={{ marginLeft:'0.4rem' }}>{errDelModal}</span>
+              </div>
+              <div className="p-modal__actions">
+                <button className="p-btn p-btn--outline" onClick={() => { setConfirmDel(null); setErrDelModal('') }}>Cerrar</button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p style={{ fontSize:'0.875rem', color:'#6b7280', lineHeight:1.55, marginBottom:'1rem' }}>
+                ¿Confirmas la eliminacion del lote <strong>{confirmDel.codigo}</strong>? Esta accion no puede deshacerse.
+              </p>
+              <div className="p-modal__actions">
+                <button className="p-btn p-btn--outline" onClick={() => { setConfirmDel(null); setErrDelModal('') }}>Cancelar</button>
+                <button className="p-btn p-btn--danger" onClick={eliminarLote} disabled={procesando}>
+                  {procesando ? <><span className="p-spinner p-spinner--sm" /> Eliminando...</> : <><IcoTrash /> Confirmar eliminacion</>}
+                </button>
+              </div>
+            </>
+          )}
         </Modal>
       )}
 

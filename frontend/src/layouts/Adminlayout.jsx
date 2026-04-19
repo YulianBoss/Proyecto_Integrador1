@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './AdminLayout.css'
@@ -36,7 +36,31 @@ const NAV_ITEMS = [
 export default function AdminLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    const handleOutside = (event) => {
+      if (!menuRef.current) return
+      if (!menuRef.current.contains(event.target)) {
+        setMenuOpen(false)
+      }
+    }
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('keydown', handleEscape)
+
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [])
 
   const handleLogout = () => {
     logout()
@@ -51,81 +75,85 @@ export default function AdminLayout() {
 
   return (
     <div className="adm-root">
-      {/* Sidebar */}
-      <aside className={`adm-sidebar ${sidebarOpen ? 'adm-sidebar--open' : ''}`}>
-        <div className="adm-brand">
-          <div className="adm-brand__icon">
-            <IconSettings />
-          </div>
-          <div>
-            <div className="adm-brand__name">SIGFITO</div>
-            <div className="adm-brand__sub">Panel Administrativo</div>
-          </div>
-        </div>
-
-        <div className="adm-user-row">
-          <div className="adm-avatar">{initiales}</div>
-          <div>
-            <div className="adm-user-name">{user?.nombre || 'Administrador'}</div>
-            <div className="adm-user-role">Administrador ICA</div>
-          </div>
-        </div>
-
-        <nav className="adm-nav">
-          {NAV_ITEMS.map(group => (
-            <div key={group.section}>
-              <div className="adm-nav__section">{group.section}</div>
-              {group.items.map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) => `adm-nav__item ${isActive ? 'adm-nav__item--active' : ''}`}
-                  onClick={() => setSidebarOpen(false)}
-                >
-                  <span className="adm-nav__icon">{item.icon}</span>
-                  <span>{item.label}</span>
-                </NavLink>
-              ))}
-            </div>
-          ))}
-        </nav>
-
-        <div className="adm-sidebar__footer">
-          <button className="adm-logout-btn" onClick={handleLogout}>
-            <IconLogout />
-            Cerrar sesión
-          </button>
-        </div>
-      </aside>
-
-      {/* Main */}
-      <div className="adm-main">
-        {/* Topbar */}
-        <header className="adm-topbar">
-          <button className="adm-menu-btn" onClick={() => setSidebarOpen(v => !v)}>
+      <div className="adm-main adm-main--full">
+        <header className="adm-topbar" ref={menuRef}>
+          <button
+            className="adm-menu-btn"
+            onClick={() => setMenuOpen(v => !v)}
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+          >
             <IconMenu />
           </button>
+
           <div className="adm-topbar__title">
             <h3>Panel Administrativo</h3>
             <p>Gestión global del sistema fitosanitario</p>
           </div>
+
           <div className="adm-topbar__actions">
             <span className="adm-topbar__date">
               <IconCalendar /> {today}
             </span>
             <div className="adm-topbar__avatar">{initiales}</div>
           </div>
+
+          {menuOpen && (
+            <div className="adm-dropdown" role="menu">
+              <div className="adm-brand">
+                <div className="adm-brand__icon">
+                  <IconSettings />
+                </div>
+                <div>
+                  <div className="adm-brand__name">SIGFITO</div>
+                  <div className="adm-brand__sub">Panel Administrativo</div>
+                </div>
+              </div>
+
+              <div className="adm-user-row">
+                <div className="adm-avatar">{initiales}</div>
+                <div>
+                  <div className="adm-user-name">{user?.nombre || 'Administrador'}</div>
+                  <div className="adm-user-role">Administrador ICA</div>
+                </div>
+              </div>
+
+              <nav className="adm-nav">
+                {NAV_ITEMS.map(group => (
+                  <div key={group.section}>
+                    <div className="adm-nav__section">{group.section}</div>
+                    {group.items.map(item => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        className={({ isActive }) => `adm-nav__item ${isActive ? 'adm-nav__item--active' : ''}`}
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        <span className="adm-nav__icon">{item.icon}</span>
+                        <span>{item.label}</span>
+                      </NavLink>
+                    ))}
+                  </div>
+                ))}
+              </nav>
+
+              <div className="adm-sidebar__footer">
+                <button className="adm-logout-btn" onClick={handleLogout}>
+                  <IconLogout />
+                  Cerrar sesión
+                </button>
+              </div>
+            </div>
+          )}
         </header>
 
-        {/* Page content */}
         <main className="adm-page">
           <Outlet />
         </main>
       </div>
 
-      {/* Overlay mobile */}
-      {sidebarOpen && (
-        <div className="adm-overlay" onClick={() => setSidebarOpen(false)} />
+      {menuOpen && (
+        <div className="adm-overlay" onClick={() => setMenuOpen(false)} />
       )}
     </div>
   )

@@ -1,0 +1,88 @@
+version: '3.9'
+
+services:
+
+  # ── Auth Service ─────────────────────────────────────────────
+  auth-service:
+    build:
+      context: ./backend/auth-service
+      dockerfile: Dockerfile
+    container_name: sigfito-auth
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      PORT: 3001
+      JWT_SECRET: ${JWT_SECRET}
+      DB_HOST: ${AUTH_DB_HOST}
+      DB_USER: ${AUTH_DB_USER}
+      DB_PASSWORD: ${AUTH_DB_PASSWORD}
+      DB_NAME: ${AUTH_DB_NAME}
+      DB_PORT: ${AUTH_DB_PORT}
+    networks:
+      - sigfito-net
+
+  # ── Production Service ───────────────────────────────────────
+  production-service:
+    build:
+      context: ./backend/production-service
+      dockerfile: Dockerfile
+    container_name: sigfito-production
+    restart: unless-stopped
+    ports:
+      - "58761:58761"
+    environment:
+      PORT: 58761
+      JWT_SECRET: ${JWT_SECRET}
+      DB_HOST: ${PROD_DB_HOST}
+      DB_USER: ${PROD_DB_USER}
+      DB_PASSWORD: ${PROD_DB_PASSWORD}
+      DB_NAME: ${PROD_DB_NAME}
+      DB_PORT: ${PROD_DB_PORT}
+    networks:
+      - sigfito-net
+
+  # ── Inspection Service ───────────────────────────────────────
+  inspection-service:
+    build:
+      context: ./backend/inspection-service
+      dockerfile: Dockerfile
+    container_name: sigfito-inspection
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      PORT: 3003
+      JWT_SECRET: ${JWT_SECRET}
+      DB_HOST: ${INSP_DB_HOST}
+      DB_USER: ${INSP_DB_USER}
+      DB_PASSWORD: ${INSP_DB_PASSWORD}
+      DB_NAME: ${INSP_DB_NAME}
+      DB_PORT: ${INSP_DB_PORT}
+      PRODUCTION_SERVICE_URL: http://production-service:58761
+      AUTH_SERVICE_URL: http://auth-service:3001
+    depends_on:
+      - auth-service
+      - production-service
+    networks:
+      - sigfito-net
+
+  # ── Frontend ─────────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: sigfito-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - auth-service
+      - production-service
+      - inspection-service
+    networks:
+      - sigfito-net
+
+networks:
+  sigfito-net:
+    driver: bridge

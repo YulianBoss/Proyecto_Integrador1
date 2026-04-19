@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './ProductorLayout.css'
@@ -29,7 +29,21 @@ const NAV = [
 export default function ProductorLayout() {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
-  const [open, setOpen] = useState(false)
+  const [menuOpen, setMenuOpen] = useState(false)
+  const menuRef = useRef(null)
+
+  useEffect(() => {
+    const handleOutside = (e) => {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setMenuOpen(false)
+    }
+    const handleEscape = (e) => { if (e.key === 'Escape') setMenuOpen(false) }
+    document.addEventListener('mousedown', handleOutside)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('mousedown', handleOutside)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [])
 
   const handleLogout = () => { logout(); navigate('/login') }
 
@@ -41,70 +55,75 @@ export default function ProductorLayout() {
 
   return (
     <div className="pl-root">
-      <aside className={`pl-sidebar ${open ? 'pl-sidebar--open' : ''}`}>
-        <div className="pl-brand">
-          <div className="pl-brand__icon"><IcoLeaf /></div>
-          <div>
-            <div className="pl-brand__name">SIGFITO</div>
-            <div className="pl-brand__sub">Sistema Fitosanitario</div>
-          </div>
-        </div>
-
-        <div className="pl-user">
-          <div className="pl-avatar">{ini}</div>
-          <div>
-            <div className="pl-user__name">{user?.nombre || 'Productor'}</div>
-            <span className="pl-user__role">Productor</span>
-          </div>
-        </div>
-
-        <nav className="pl-nav">
-          {NAV.map(g => (
-            <div key={g.section}>
-              <div className="pl-nav__section">{g.section}</div>
-              {g.items.map(item => (
-                <NavLink
-                  key={item.to}
-                  to={item.to}
-                  className={({ isActive }) =>
-                    `pl-nav__item${isActive ? ' pl-nav__item--active' : ''}`
-                  }
-                  onClick={() => setOpen(false)}
-                >
-                  <span className="pl-nav__icon">{item.icon}</span>
-                  {item.label}
-                </NavLink>
-              ))}
-            </div>
-          ))}
-        </nav>
-
-        <div className="pl-sidebar__footer">
-          <button className="pl-logout" onClick={handleLogout}>
-            <IcoLogout /> Cerrar sesion
+      <div className="pl-main pl-main--full">
+        <header className="pl-topbar" ref={menuRef}>
+          <button
+            className="pl-menu-btn"
+            onClick={() => setMenuOpen(v => !v)}
+            aria-expanded={menuOpen}
+            aria-haspopup="menu"
+          >
+            <IcoMenu />
           </button>
-        </div>
-      </aside>
-
-      <div className="pl-main">
-        <header className="pl-topbar">
-          <button className="pl-menu-btn" onClick={() => setOpen(v => !v)}><IcoMenu /></button>
           <div className="pl-topbar__title">
             <h3>Panel del Productor</h3>
-            <p>Bienvenido, {user?.nombre}</p>
+            <p>Gestion fitosanitaria de sus lugares de produccion</p>
           </div>
           <div className="pl-topbar__actions">
             <span className="pl-topbar__date"><IcoCal /> {hoy}</span>
             <div className="pl-topbar__avatar">{ini}</div>
           </div>
+
+          {menuOpen && (
+            <div className="pl-dropdown" role="menu">
+              <div className="pl-brand">
+                <div className="pl-brand__icon"><IcoLeaf /></div>
+                <div>
+                  <div className="pl-brand__name">SIGFITO</div>
+                  <div className="pl-brand__sub">Sistema Fitosanitario</div>
+                </div>
+              </div>
+
+              <div className="pl-user-row">
+                <div className="pl-avatar">{ini}</div>
+                <div>
+                  <div className="pl-user__name">{user?.nombre || 'Productor'}</div>
+                  <div className="pl-user__role">Productor</div>
+                </div>
+              </div>
+
+              <nav className="pl-nav">
+                {NAV.map(g => (
+                  <div key={g.section}>
+                    <div className="pl-nav__section">{g.section}</div>
+                    {g.items.map(item => (
+                      <NavLink
+                        key={item.to}
+                        to={item.to}
+                        className={({ isActive }) => `pl-nav__item${isActive ? ' pl-nav__item--active' : ''}`}
+                        onClick={() => setMenuOpen(false)}
+                      >
+                        <span className="pl-nav__icon">{item.icon}</span>
+                        <span>{item.label}</span>
+                      </NavLink>
+                    ))}
+                  </div>
+                ))}
+              </nav>
+
+              <div className="pl-sidebar__footer">
+                <button className="pl-logout" onClick={handleLogout}>
+                  <IcoLogout /> Cerrar sesion
+                </button>
+              </div>
+            </div>
+          )}
         </header>
 
         <main className="pl-page">
           <Outlet />
         </main>
       </div>
-
-      {open && <div className="pl-overlay" onClick={() => setOpen(false)} />}
     </div>
   )
 }

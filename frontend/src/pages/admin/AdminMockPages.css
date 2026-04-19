@@ -1,0 +1,68 @@
+.mock-admin-page {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 1rem;
+}
+
+.mock-admin-page h2 {
+  margin: 0;
+  color: #0f172a;
+  font-size: 1.04rem;
+}
+
+.mock-admin-page p {
+  margin-top: 0.35rem;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.mock-toolbar {
+  margin-top: 0.85rem;
+  display: grid;
+  grid-template-columns: 1fr 230px;
+  gap: 0.65rem;
+}
+
+.mock-toolbar input,
+.mock-toolbar select {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.52rem 0.65rem;
+  font: inherit;
+  font-size: 0.82rem;
+}
+
+.mock-table-wrap {
+  margin-top: 0.8rem;
+  overflow-x: auto;
+}
+
+.mock-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mock-table th,
+.mock-table td {
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  padding: 0.55rem;
+  font-size: 0.8rem;
+}
+
+.mock-table th {
+  color: #334155;
+  font-size: 0.75rem;
+}
+
+.mock-table td {
+  color: #0f172a;
+}
+
+@media (max-width: 720px) {
+  .mock-toolbar {
+    grid-template-columns: 1fr;
+  }
+}

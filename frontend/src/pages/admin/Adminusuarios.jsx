@@ -64,7 +64,7 @@ export default function AdminUsuarios() {
   const [filtroEstado, setFiltroEstado] = useState('')
 
   // Filtros solicitudes
-  const [filtroSolicitudEstado, setFiltroSolicitudEstado] = useState('pendiente')
+  const [filtroSolicitudIdentificacion, setFiltroSolicitudIdentificacion] = useState('')
 
   // Modales
   const [modalEditar, setModalEditar] = useState(null)
@@ -73,7 +73,7 @@ export default function AdminUsuarios() {
   const [procesando, setProcesando] = useState(false)
 
   // Form editar
-  const [formEditar, setFormEditar] = useState({ nombre_completo: '', telefono: '', rol: '', estado: '' })
+  const [formEditar, setFormEditar] = useState({ nombre_completo: '', correo: '', telefono: '', rol: '', estado: '' })
 
   const showToast = (msg, tipo = 'ok') => {
     setToast({ msg, tipo })
@@ -102,7 +102,8 @@ export default function AdminUsuarios() {
     setError('')
     try {
       const params = {}
-      if (filtroSolicitudEstado) params.estado = filtroSolicitudEstado
+      const identificacion = filtroSolicitudIdentificacion.trim()
+      if (identificacion) params.num_identificacion = identificacion
       const res = await authAPI.getSolicitudes(params)
       setSolicitudes(Array.isArray(res.data) ? res.data : res.data.data || [])
     } catch {
@@ -110,7 +111,7 @@ export default function AdminUsuarios() {
     } finally {
       setLoading(false)
     }
-  }, [filtroSolicitudEstado])
+  }, [filtroSolicitudIdentificacion])
 
   useEffect(() => { if (tab === 'usuarios')    cargarUsuarios()    }, [tab, cargarUsuarios])
   useEffect(() => { if (tab === 'solicitudes') cargarSolicitudes() }, [tab, cargarSolicitudes])
@@ -119,6 +120,7 @@ export default function AdminUsuarios() {
   const abrirEditar = (u) => {
     setFormEditar({
       nombre_completo: u.nombre_completo,
+      correo: u.correo || '',
       telefono: u.telefono || '',
       rol: u.rol,
       estado: u.estado
@@ -127,9 +129,20 @@ export default function AdminUsuarios() {
   }
 
   const guardarEditar = async () => {
+    const telefonoLimpio = (formEditar.telefono || '').trim()
+    if (!telefonoLimpio) {
+      showToast('El teléfono es obligatorio.', 'error')
+      return
+    }
+
+    if (!/^\d{10}$/.test(telefonoLimpio)) {
+      showToast('El teléfono debe tener exactamente 10 dígitos.', 'error')
+      return
+    }
+
     setProcesando(true)
     try {
-      await authAPI.updateUser(modalEditar.id, formEditar)
+      await authAPI.updateUser(modalEditar.id, { ...formEditar, telefono: telefonoLimpio })
       showToast('Usuario actualizado correctamente.')
       setModalEditar(null)
       cargarUsuarios()
@@ -302,6 +315,7 @@ export default function AdminUsuarios() {
                     <th>Correo</th>
                     <th>Rol</th>
                     <th>Identificación</th>
+                    <th>Tarjeta Profesional</th>
                     <th>Teléfono</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -323,6 +337,7 @@ export default function AdminUsuarios() {
                         </span>
                       </td>
                       <td className="gu-td-muted">{u.num_identificacion || '—'}</td>
+                      <td className="gu-td-muted">{u.rol === 'tecnico' ? (u.tarjeta_profesional || '—') : '—'}</td>
                       <td className="gu-td-muted">{u.telefono || '—'}</td>
                       <td><Badge estado={u.estado} /></td>
                       <td>
@@ -357,12 +372,19 @@ export default function AdminUsuarios() {
               <p>Productores y técnicos que esperan aprobación de cuenta.</p>
             </div>
             <div className="gu-filter-bar">
-              <select value={filtroSolicitudEstado} onChange={e => setFiltroSolicitudEstado(e.target.value)} className="gu-select">
-                <option value="pendiente">Pendientes</option>
-                <option value="activo">Aprobadas</option>
-                <option value="rechazado">Rechazadas</option>
-                <option value="">Todas</option>
-              </select>
+              <div className="gu-search-box">
+                <span className="gu-search-icon"><IconSearch /></span>
+                <input
+                  type="text"
+                  placeholder="Filtrar por N° identificación..."
+                  value={filtroSolicitudIdentificacion}
+                  onChange={e => {
+                    const next = e.target.value
+                    if (!/^\d*$/.test(next)) return
+                    setFiltroSolicitudIdentificacion(next)
+                  }}
+                />
+              </div>
             </div>
           </div>
 
@@ -372,7 +394,7 @@ export default function AdminUsuarios() {
             ) : solicitudes.length === 0 ? (
               <div className="gu-empty">
                 <IconSolicitud />
-                <p>No hay solicitudes {filtroSolicitudEstado ? `con estado "${filtroSolicitudEstado}"` : ''}.</p>
+                <p>No hay solicitudes pendientes con esos criterios.</p>
               </div>
             ) : (
               <table className="gu-table">
@@ -382,6 +404,7 @@ export default function AdminUsuarios() {
                     <th>Correo</th>
                     <th>Rol solicitado</th>
                     <th>Identificación</th>
+                    <th>Tarjeta Profesional</th>
                     <th>Teléfono</th>
                     <th>Fecha solicitud</th>
                     <th>Estado</th>
@@ -404,6 +427,7 @@ export default function AdminUsuarios() {
                         </span>
                       </td>
                       <td className="gu-td-muted">{s.num_identificacion || '—'}</td>
+                      <td className="gu-td-muted">{s.rol === 'tecnico' ? (s.tarjeta_profesional || '—') : '—'}</td>
                       <td className="gu-td-muted">{s.telefono || '—'}</td>
                       <td className="gu-td-muted">
                         {s.fecha_registro
@@ -454,13 +478,32 @@ export default function AdminUsuarios() {
                 onChange={e => setFormEditar(p => ({ ...p, nombre_completo: e.target.value }))}
               />
             </div>
+            <div className="gu-form-group gu-form-group--full">
+              <label>Correo electrónico</label>
+              <input
+                className="gu-input"
+                type="email"
+                value={formEditar.correo}
+                onChange={e => setFormEditar(p => ({ ...p, correo: e.target.value }))}
+                placeholder="usuario@dominio.com"
+              />
+            </div>
             <div className="gu-form-group">
               <label>Teléfono</label>
               <input
                 className="gu-input"
                 value={formEditar.telefono}
-                onChange={e => setFormEditar(p => ({ ...p, telefono: e.target.value }))}
-                placeholder="300 000 0000"
+                onChange={e => {
+                  const next = e.target.value
+                  if (!/^\d*$/.test(next)) return
+                  if (next.length > 10) return
+                  setFormEditar(p => ({ ...p, telefono: next }))
+                }}
+                inputMode="numeric"
+                minLength={10}
+                maxLength={10}
+                placeholder="10 dígitos"
+                required
               />
             </div>
             <div className="gu-form-group">

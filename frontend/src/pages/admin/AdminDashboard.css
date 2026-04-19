@@ -1,0 +1,271 @@
+:root {
+  --ad-card-bg: #ffffff;
+  --ad-card-border: #dce3ec;
+  --ad-text-main: #142433;
+  --ad-text-soft: #556476;
+  --ad-bar-a: #2467b2;
+  --ad-bar-b: #2f8c66;
+  --ad-bar-c: #bd8f2c;
+  --ad-bar-d: #bf4f48;
+}
+
+.ad-dash-root {
+  display: grid;
+  gap: 1rem;
+}
+
+.ad-dash-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(125deg, #12344f 0%, #1e5d86 42%, #3ea070 100%);
+  color: #f8fbff;
+  border-radius: 16px;
+  padding: 1.2rem 1.3rem;
+  box-shadow: 0 10px 28px rgba(18, 52, 79, 0.24);
+}
+
+.ad-dash-orb {
+  position: absolute;
+  border-radius: 999px;
+  pointer-events: none;
+}
+
+.ad-dash-orb--a {
+  width: 130px;
+  height: 130px;
+  right: -18px;
+  top: -32px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.ad-dash-orb--b {
+  width: 92px;
+  height: 92px;
+  right: 125px;
+  bottom: -42px;
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.ad-dash-kicker {
+  margin: 0;
+  position: relative;
+  z-index: 1;
+  font-size: 0.72rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.9;
+}
+
+.ad-dash-hero h2 {
+  position: relative;
+  z-index: 1;
+  margin: 0.25rem 0 0;
+  font-size: clamp(1.45rem, 1.15rem + 1vw, 2.05rem);
+  line-height: 1.05;
+}
+
+.ad-dash-hero p:last-of-type {
+  position: relative;
+  z-index: 1;
+  margin: 0.35rem 0 0;
+  max-width: 680px;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.ad-dash-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.ad-card {
+  border: 1px solid var(--ad-card-border);
+  background: var(--ad-card-bg);
+  border-radius: 14px;
+  min-height: 180px;
+  padding: 1rem;
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.07);
+  animation: ad-appear 0.35s ease both;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.ad-card[role='button'] {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.ad-card[role='button']:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 24px rgba(17, 24, 39, 0.12);
+}
+
+.ad-card[role='button']:focus-visible {
+  outline: 2px solid #2b6cb0;
+  outline-offset: 2px;
+}
+
+.ad-card__body {
+  flex: 1;
+}
+
+.ad-card__icon {
+  width: 72px;
+  height: 72px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.ad-card__icon svg {
+  width: 38px;
+  height: 38px;
+}
+
+.ad-card h3 {
+  margin: 0;
+  font-size: clamp(1.2rem, 0.95rem + 0.9vw, 1.75rem);
+  color: var(--ad-text-main);
+  line-height: 1.08;
+}
+
+.ad-card p {
+  margin: 0.5rem 0 0;
+  font-size: clamp(0.82rem, 0.74rem + 0.18vw, 0.95rem);
+  color: var(--ad-text-soft);
+  max-width: 260px;
+}
+
+.ad-card--users .ad-card__icon {
+  background: #e6effb;
+  color: #2b6cb0;
+}
+
+.ad-card--pests .ad-card__icon {
+  background: #f6ecd7;
+  color: #946200;
+}
+
+.ad-card--crops .ad-card__icon {
+  background: #e4f2e9;
+  color: #206a45;
+}
+
+.ad-card--chart {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: stretch;
+}
+
+.ad-chart__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.8rem;
+}
+
+.ad-chart__header h3 {
+  margin: 0;
+  font-size: clamp(1rem, 0.88rem + 0.35vw, 1.2rem);
+  color: var(--ad-text-main);
+}
+
+.ad-chart__header span {
+  font-size: 0.7rem;
+  color: #5e6f82;
+}
+
+.ad-bars {
+  display: grid;
+  gap: 0.48rem;
+}
+
+.ad-bar-row {
+  animation: ad-appear 0.35s ease both;
+}
+
+.ad-bar-row__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.22rem;
+}
+
+.ad-bar-row__top strong {
+  font-size: 0.77rem;
+  color: #1f2f41;
+}
+
+.ad-bar-row__top small {
+  font-size: 0.72rem;
+  color: #63758a;
+}
+
+.ad-bar-track {
+  width: 100%;
+  height: 9px;
+  border-radius: 999px;
+  background: #ecf1f6;
+  overflow: hidden;
+}
+
+.ad-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+}
+
+.ad-chart__cta {
+  margin-top: 0.85rem;
+  border: 0;
+  border-radius: 8px;
+  background: #e9f0f9;
+  color: #214f84;
+  padding: 0.46rem 0.62rem;
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  width: fit-content;
+}
+
+.ad-chart__cta:hover {
+  background: #d6e5f7;
+}
+
+@keyframes ad-appear {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 900px) {
+  .ad-dash-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ad-card {
+    min-height: 160px;
+  }
+
+  .ad-card__icon {
+    width: 62px;
+    height: 62px;
+  }
+
+  .ad-card__icon svg {
+    width: 32px;
+    height: 32px;
+  }
+}

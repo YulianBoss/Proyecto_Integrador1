@@ -28,6 +28,13 @@ export const productionAPI = {
   delete:  (id)        => axios.delete(`${PRODUCTION_URL}/api/production/${id}`, { headers: getHeaders() }),
 }
 
+export const prediosAPI = {
+  create:  (data)      => axios.post(`${PRODUCTION_URL}/api/predios`, data, { headers: getHeaders() }),
+  getAll:  ()          => axios.get(`${PRODUCTION_URL}/api/predios`, { headers: getHeaders() }),
+  update:  (id, data)  => axios.put(`${PRODUCTION_URL}/api/predios/${id}`, data, { headers: getHeaders() }),
+  delete:  (id)        => axios.delete(`${PRODUCTION_URL}/api/predios/${id}`, { headers: getHeaders() }),
+}
+
 export const lotesAPI = {
   create:        (data)      => axios.post(`${PRODUCTION_URL}/api/lots`, data, { headers: getHeaders() }),
   getByLugar:    (lugar_id)  => axios.get(`${PRODUCTION_URL}/api/lots/lugar/${lugar_id}`, { headers: getHeaders() }),

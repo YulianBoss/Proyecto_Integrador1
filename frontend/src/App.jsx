@@ -3,7 +3,10 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import AdminLayout from './layouts/AdminLayout'
+import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsuarios from './pages/admin/AdminUsuarios'
+import AdminPlagasMock from './pages/admin/AdminPlagasMock'
+import AdminCultivosMock from './pages/admin/AdminCultivosMock'
 import ProductorLayout from './layouts/ProductorLayout'
 import ProductorDashboard from './pages/productor/ProductorDashboard'
 import LugaresList from './pages/productor/LugaresList'
@@ -21,29 +24,6 @@ function Placeholder({ titulo }) {
     }}>
       <div style={{ fontSize:'1.5rem', marginBottom:'0.5rem' }}>&#9881;</div>
       <strong>{titulo}</strong> — en construccion
-    </div>
-  )
-}
-
-function AdminDashboard() {
-  const { user } = useAuth()
-  return (
-    <div>
-      <div style={{ marginBottom:'1.25rem' }}>
-        <h2 style={{ fontSize:'1.35rem', fontWeight:700, color:'#1e293b' }}>Panel de Control</h2>
-        <p style={{ fontSize:'0.82rem', color:'#6b7280', marginTop:'3px' }}>Bienvenido, {user?.nombre}.</p>
-      </div>
-      <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit,minmax(190px,1fr))', gap:'1rem' }}>
-        {['Usuarios Activos','Lugares Registrados','Inspecciones 2026','Plagas Catalogadas'].map((label, i) => (
-          <div key={label} style={{
-            background:'#fff', borderRadius:'10px', border:'1px solid #e5e9f0',
-            padding:'1.25rem', boxShadow:'0 1px 4px rgba(0,0,0,.06)'
-          }}>
-            <div style={{ fontSize:'1.8rem', fontWeight:800, color:['#2563a8','#2e7d52','#92400e','#5b21b6'][i] }}>—</div>
-            <div style={{ fontSize:'0.78rem', color:'#6b7280', marginTop:'4px' }}>{label}</div>
-          </div>
-        ))}
-      </div>
     </div>
   )
 }
@@ -80,8 +60,8 @@ export default function App() {
           <Route path="dashboard"    element={<AdminDashboard />} />
           <Route path="usuarios"     element={<AdminUsuarios />} />
           <Route path="solicitudes"  element={<Navigate to="/admin/usuarios" replace />} />
-          <Route path="plagas"       element={<Placeholder titulo="Gestion de Plagas" />} />
-          <Route path="cultivos"     element={<Placeholder titulo="Cultivos / Especies" />} />
+          <Route path="plagas"       element={<AdminPlagasMock />} />
+          <Route path="cultivos"     element={<AdminCultivosMock />} />
           <Route path="inspecciones" element={<Placeholder titulo="Supervision de Inspecciones" />} />
           <Route path="reportes"     element={<Placeholder titulo="Reportes Globales" />} />
         </Route>
