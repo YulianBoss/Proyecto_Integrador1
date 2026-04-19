@@ -27,11 +27,19 @@
 .reg-back-link {
   font-size: 0.8rem;
   color: rgba(255,255,255,0.65);
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
   margin-bottom: 1rem;
   transition: color var(--transition);
 }
 .reg-back-link:hover { color: #fff; }
+
+.reg-back-link__icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+}
 
 .reg-logo {
   display: flex;
@@ -40,6 +48,25 @@
   margin-bottom: 1rem;
   font-size: 1rem;
 }
+
+.reg-logo__mark {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.12);
+  border: 1px solid rgba(255,255,255,0.2);
+}
+
+.reg-logo__icon {
+  width: 18px;
+  height: 18px;
+  color: #dcfce7;
+  stroke: currentColor;
+}
+
 .reg-logo__text {
   font-family: var(--font-display);
   font-size: 1.2rem;
@@ -149,8 +176,21 @@
 }
 
 .rol-card__icon {
-  font-size: 1.75rem;
+  width: 46px;
+  height: 46px;
+  border-radius: 14px;
+  background: #f0fdf4;
+  color: var(--verde-acento);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   flex-shrink: 0;
+}
+
+.rol-card__icon-svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
 }
 
 .rol-card div {
@@ -173,19 +213,37 @@
 .rol-card__check {
   position: absolute;
   right: 1rem;
+  width: 22px;
+  height: 22px;
   color: var(--verde-acento);
-  font-weight: 700;
-  font-size: 1.1rem;
+}
+
+.rol-card__check-icon {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
 }
 
 /* Notice */
 .reg-notice {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
   font-size: 0.78rem;
   color: var(--gris-600);
   background: var(--gris-100);
   border-radius: var(--r-sm);
   padding: 0.75rem 1rem;
   line-height: 1.5;
+}
+
+.reg-notice__icon {
+  width: 17px;
+  height: 17px;
+  color: var(--verde-medio);
+  stroke: currentColor;
+  flex-shrink: 0;
+  margin-top: 1px;
 }
 
 /* Fields */
@@ -219,6 +277,48 @@
   box-shadow: 0 0 0 3px rgba(61,122,82,0.1);
 }
 
+.field__error {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin-top: 0.45rem;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  color: #dc2626;
+}
+
+.field__error-icon {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.login-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+  border-radius: var(--r-sm);
+  padding: 0.85rem 1rem;
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.login-alert--error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.login-alert__icon {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
 /* Actions */
 .reg-actions {
   display: flex;
@@ -242,9 +342,24 @@
   color: var(--gris-800);
 }
 
+.btn-inline-icon {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+
 .reg-actions .btn-primary {
   flex: 1;
   margin-top: 0;
+}
+
+.reg-actions .btn-primary,
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
 }
 
 /* Success */
@@ -271,7 +386,22 @@
   animation: slideUp 0.5s ease both;
 }
 
-.success-emoji { font-size: 3.5rem; }
+.success-icon-wrap {
+  width: 78px;
+  height: 78px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(61,122,82,0.1);
+  color: var(--verde-medio);
+}
+
+.success-icon {
+  width: 42px;
+  height: 42px;
+  stroke: currentColor;
+}
 
 .reg-success h2 {
   font-family: var(--font-display);

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { authAPI } from '../services/api'
 import './Register.css'
 
@@ -36,8 +36,83 @@ const VALIDATIONS = {
   },
 }
 
+function Icon({ className = '', viewBox = '0 0 24 24', children }) {
+  return (
+    <svg className={className} viewBox={viewBox} aria-hidden="true" fill="none">
+      {children}
+    </svg>
+  )
+}
+
+function IconArrowLeft({ className = '' }) {
+  return (
+    <Icon className={className}>
+      <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M9 12h10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    </Icon>
+  )
+}
+
+function IconLeaf({ className = '' }) {
+  return (
+    <Icon className={className}>
+      <path d="M18 5c-5.5.4-9.55 2.9-11.63 7.16C5.17 14.58 5 17.14 5 19c1.86 0 4.42-.17 6.84-1.37C16.1 15.55 18.6 11.5 19 6a1 1 0 0 0-1-1z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8 16c1.5-2.2 3.7-4.4 7-6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </Icon>
+  )
+}
+
+function IconSprout({ className = '' }) {
+  return (
+    <Icon className={className}>
+      <path d="M12 21v-7" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 14c0-4.4 2.6-7 7-7 0 4.4-2.6 7-7 7z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M12 14c0-3.8-2.3-6-6-6 0 3.8 2.3 6 6 6z" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </Icon>
+  )
+}
+
+function IconSearch({ className = '' }) {
+  return (
+    <Icon className={className}>
+      <circle cx="11" cy="11" r="5" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M15 15l4 4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M11 8v6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <path d="M8 11h6" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </Icon>
+  )
+}
+
+function IconCheckCircle({ className = '' }) {
+  return (
+    <Icon className={className}>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M8.5 12.2l2.4 2.4 4.8-5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </Icon>
+  )
+}
+
+function IconAlert({ className = '' }) {
+  return (
+    <Icon className={className}>
+      <path d="M12 3l9 16H3L12 3z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+      <path d="M12 9v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="12" cy="16.5" r="1" fill="currentColor" />
+    </Icon>
+  )
+}
+
+function IconInfo({ className = '' }) {
+  return (
+    <Icon className={className}>
+      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="1.8" />
+      <path d="M12 10.5v4" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+      <circle cx="12" cy="7.5" r="1" fill="currentColor" />
+    </Icon>
+  )
+}
+
 export default function Register() {
-  const navigate = useNavigate()
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({
     nombre_completo: '', correo: '', password: '', confirmar: '',
@@ -158,7 +233,9 @@ export default function Register() {
   if (success) return (
     <div className="reg-success-wrap">
       <div className="reg-success">
-        <span className="success-emoji">✅</span>
+        <span className="success-icon-wrap">
+          <IconCheckCircle className="success-icon" />
+        </span>
         <h2>¡Solicitud enviada!</h2>
         <p>
           Tu solicitud de acceso fue registrada con éxito. El administrador del ICA
@@ -172,7 +249,12 @@ export default function Register() {
   // ── Helper: muestra error de campo ───────────────────────
   const FieldError = ({ name }) =>
     fieldErrors[name]
-      ? <span className="field__error">⚠ {fieldErrors[name]}</span>
+      ? (
+        <span className="field__error">
+          <IconAlert className="field__error-icon" />
+          <span>{fieldErrors[name]}</span>
+        </span>
+      )
       : null
 
   return (
@@ -180,9 +262,14 @@ export default function Register() {
       <div className="reg-card">
         {/* Header */}
         <div className="reg-card__header">
-          <Link to="/login" className="reg-back-link">← Volver</Link>
+          <Link to="/login" className="reg-back-link">
+            <IconArrowLeft className="reg-back-link__icon" />
+            <span>Volver</span>
+          </Link>
           <div className="reg-logo">
-            <span>🌿</span>
+            <span className="reg-logo__mark">
+              <IconLeaf className="reg-logo__icon" />
+            </span>
             <span className="reg-logo__text">SIGFITO</span>
           </div>
           <h2 className="reg-card__title">Solicitud de acceso</h2>
@@ -206,7 +293,12 @@ export default function Register() {
         {step === 1 && (
           <div className="reg-step-content" key="step1">
             <p className="reg-step__label">¿Cuál es tu rol en el sistema?</p>
-            {error && <div className="login-alert login-alert--error"><span>⚠</span> {error}</div>}
+            {error && (
+              <div className="login-alert login-alert--error">
+                <IconAlert className="login-alert__icon" />
+                <span>{error}</span>
+              </div>
+            )}
 
             <div className="rol-cards">
               {ROLES.map(r => (
@@ -217,24 +309,33 @@ export default function Register() {
                   onClick={() => handleRol(r.value)}
                 >
                   <span className="rol-card__icon">
-                    {r.value === 'productor' ? '🌱' : '🔬'}
+                    {r.value === 'productor'
+                      ? <IconSprout className="rol-card__icon-svg" />
+                      : <IconSearch className="rol-card__icon-svg" />}
                   </span>
                   <div>
                     <strong>{r.label}</strong>
                     <span>{r.desc}</span>
                   </div>
-                  {form.rol === r.value && <span className="rol-card__check">✓</span>}
+                  {form.rol === r.value && (
+                    <span className="rol-card__check">
+                      <IconCheckCircle className="rol-card__check-icon" />
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
 
             <div className="reg-notice">
-              ℹ️ Solo puedes solicitar acceso como Productor o Asistente Técnico.
-              Los administradores son designados internamente por el ICA.
+              <IconInfo className="reg-notice__icon" />
+              <span>
+                Solo puedes solicitar acceso como Productor o Asistente Técnico.
+                Los administradores son designados internamente por el ICA.
+              </span>
             </div>
 
             <button type="button" className="btn-primary" onClick={nextStep}>
-              Continuar →
+              <span>Continuar</span>
             </button>
           </div>
         )}
@@ -242,7 +343,12 @@ export default function Register() {
         {/* ── Paso 2 — Datos personales ── */}
         {step === 2 && (
           <form onSubmit={handleSubmit} className="reg-step-content" key="step2">
-            {error && <div className="login-alert login-alert--error"><span>⚠</span> {error}</div>}
+            {error && (
+              <div className="login-alert login-alert--error">
+                <IconAlert className="login-alert__icon" />
+                <span>{error}</span>
+              </div>
+            )}
 
             <div className="reg-fields">
 
@@ -367,7 +473,8 @@ export default function Register() {
 
             <div className="reg-actions">
               <button type="button" className="btn-ghost" onClick={() => { setStep(1); setError('') }}>
-                ← Atrás
+                <IconArrowLeft className="btn-inline-icon" />
+                <span>Atrás</span>
               </button>
               <button
                 type="submit"

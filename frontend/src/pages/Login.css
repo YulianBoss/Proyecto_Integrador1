@@ -197,6 +197,7 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
+  overflow-y: auto;
 }
 
 .eyebrow {
@@ -231,6 +232,29 @@
   color: #64748b;
   margin-bottom: 32px;
   line-height: 1.55;
+}
+
+.register-inline {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  font-size: 13px;
+}
+
+.register-inline-text {
+  color: #64748b;
+}
+
+.register-inline-link {
+  color: #15803d;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.register-inline-link:hover {
+  color: #166534;
+  text-decoration: underline;
 }
 
 .login-form {

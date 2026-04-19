@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { authAPI } from '../services/api'
 import './Login.css'
@@ -123,6 +123,12 @@ export default function Login() {
           <div className="eyebrow"><span className="eyebrow-line" />Acceso al sistema</div>
           <h2 className="form-title">Bienvenido</h2>
           <p className="form-subtitle">Ingrese sus credenciales para continuar</p>
+          <div className="register-inline">
+            <span className="register-inline-text">¿No tienes cuenta?</span>
+            <Link to="/register" className="register-inline-link">
+              Registrarse
+            </Link>
+          </div>
 
           <form onSubmit={handleSubmit} className="login-form" noValidate>
             {error && (
