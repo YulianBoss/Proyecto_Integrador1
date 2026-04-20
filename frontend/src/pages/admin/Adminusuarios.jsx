@@ -203,6 +203,7 @@ export default function AdminUsuarios() {
 
   // ── Filtros locales usuarios ──────────────────────────────
   const usuariosFiltrados = usuarios.filter(u => {
+    if (u.estado === 'pendiente') return false
     if (!busqueda) return true
     const q = busqueda.toLowerCase()
     return u.nombre_completo?.toLowerCase().includes(q) || u.correo?.toLowerCase().includes(q)
