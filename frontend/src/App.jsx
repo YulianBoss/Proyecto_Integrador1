@@ -12,6 +12,9 @@ import ProductorDashboard from './pages/productor/ProductorDashboard'
 import LugaresList from './pages/productor/LugaresList'
 import LotesPage from './pages/productor/LotesPage'
 import SolicitarInspeccion from './pages/productor/SolicitarInspeccion'
+import TecnicoLayout from './layouts/TecnicoLayout'
+import TecnicoDashboard from './pages/tecnico/TecnicoDashboard'
+import TecnicoInspecciones from './pages/tecnico/TecnicoInspecciones'
 import './layouts/AdminLayout.css'
 import './layouts/ProductorLayout.css'
 
@@ -76,10 +79,12 @@ export default function App() {
           <Route path="historial" element={<SolicitarInspeccion />} />
         </Route>
 
-        {/* Tecnico */}
-        <Route path="/tecnico/*" element={
-          <PrivateRoute roles={['tecnico']}><Placeholder titulo="Panel del Tecnico" /></PrivateRoute>
-        } />
+        {/* Técnico */}
+        <Route path="/tecnico" element={<PrivateRoute roles={['tecnico']}><TecnicoLayout /></PrivateRoute>}>
+          <Route index element={<Navigate to="/tecnico/dashboard" replace />} />
+          <Route path="dashboard"    element={<TecnicoDashboard />} />
+          <Route path="inspecciones" element={<TecnicoInspecciones />} />
+        </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>

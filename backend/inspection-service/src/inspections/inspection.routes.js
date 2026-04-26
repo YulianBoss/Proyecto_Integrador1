@@ -4,20 +4,24 @@ const router = express.Router();
 const {
     solicitarInspeccion,
     getMisSolicitudes,
-    getDetalleSolicitud
+    getDetalleSolicitud,
+    getInspeccionesTecnico,
+    iniciarInspeccion,
+    completarInspeccion,
 } = require('./inspection.controller');
 
-const { verifyToken, verifyProductor } = require('../middlewares/auth');
+const { verifyToken, verifyProductor, verifyTecnico } = require('../middlewares/auth');
 
-// Todas las rutas requieren token y rol productor
-router.use(verifyToken, verifyProductor);
+// ── Rutas del Productor ─────────────────────────────────────
+router.post('/solicitar',       verifyToken, verifyProductor, solicitarInspeccion);
+router.get('/mis-solicitudes',  verifyToken, verifyProductor, getMisSolicitudes);
 
-// POST /api/inspections/solicitar          → solicitar inspección (RF-04)
-// GET  /api/inspections/mis-solicitudes    → ver todas mis solicitudes (?estado=pendiente)
-// GET  /api/inspections/:id               → ver detalle de una solicitud
+// ── Rutas del Técnico ───────────────────────────────────────
+router.get('/tecnico/mis-inspecciones', verifyToken, verifyTecnico, getInspeccionesTecnico);
+router.patch('/:id/iniciar',            verifyToken, verifyTecnico, iniciarInspeccion);
+router.patch('/:id/completar',          verifyToken, verifyTecnico, completarInspeccion);
 
-router.post('/solicitar',       solicitarInspeccion);
-router.get('/mis-solicitudes',  getMisSolicitudes);
-router.get('/:id',              getDetalleSolicitud);
+// ── Ruta compartida (detalle) ───────────────────────────────
+router.get('/:id', verifyToken, getDetalleSolicitud);
 
 module.exports = router;

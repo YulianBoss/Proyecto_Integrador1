@@ -133,6 +133,15 @@ const schemaStatements = [
         fecha_asociacion DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         UNIQUE KEY uq_lugar_predio (lugar_produccion_id, predio_id)
     )`,
+    `CREATE TABLE IF NOT EXISTS historial_estado_lote (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        lote_id INT NOT NULL,
+        estado_anterior VARCHAR(40) NULL,
+        estado_nuevo VARCHAR(40) NOT NULL,
+        fecha_cambio DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        observacion TEXT NULL,
+        INDEX idx_historial_lote_id (lote_id)
+    )`,
     `UPDATE lugar_predios lp
      JOIN (
         SELECT MIN(id) AS id

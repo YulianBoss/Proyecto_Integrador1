@@ -34,36 +34,29 @@ connection.connect((err) => {
             }
         });
 
-        const checkColumnQuery = `
-            SELECT 1
-            FROM INFORMATION_SCHEMA.COLUMNS
-            WHERE TABLE_SCHEMA = ?
-              AND TABLE_NAME = 'usuarios'
-              AND COLUMN_NAME = 'tarjeta_profesional'
-            LIMIT 1
-        `;
-
-        connection.query(checkColumnQuery, [process.env.DB_NAME], (checkErr, results) => {
-            if (checkErr) {
-                console.error('⚠️ No se pudo verificar la columna tarjeta_profesional:', checkErr.message);
-                return;
-            }
-
-            if (results.length > 0) {
-                return;
-            }
-
-            const alterQuery = `
-                ALTER TABLE usuarios
-                ADD COLUMN tarjeta_profesional VARCHAR(30) NULL AFTER num_identificacion
-            `;
-
-            connection.query(alterQuery, (alterErr) => {
-                if (alterErr) {
-                    console.error('⚠️ No se pudo agregar la columna tarjeta_profesional:', alterErr.message);
-                    return;
+        const ensureColumn = (column, definition, after, done) => {
+            connection.query(
+                `SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+                 WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'usuarios' AND COLUMN_NAME = ? LIMIT 1`,
+                [process.env.DB_NAME, column],
+                (err, rows) => {
+                    if (err) { console.error(`⚠️ No se pudo verificar ${column}:`, err.message); done(); return; }
+                    if (rows.length > 0) { done(); return; }
+                    connection.query(
+                        `ALTER TABLE usuarios ADD COLUMN ${column} ${definition} AFTER ${after}`,
+                        (alterErr) => {
+                            if (alterErr) console.error(`⚠️ No se pudo agregar ${column}:`, alterErr.message);
+                            else console.log(`✅ Columna ${column} agregada en usuarios`);
+                            done();
+                        }
+                    );
                 }
-                console.log('✅ Columna tarjeta_profesional agregada en usuarios');
+            );
+        };
+
+        ensureColumn('tarjeta_profesional', 'VARCHAR(30) NULL', 'num_identificacion', () => {
+            ensureColumn('departamento', 'VARCHAR(120) NULL', 'tarjeta_profesional', () => {
+                ensureColumn('municipio', 'VARCHAR(120) NULL', 'departamento', () => {});
             });
         });
     }

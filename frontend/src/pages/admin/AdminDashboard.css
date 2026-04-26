@@ -155,6 +155,11 @@
   color: #206a45;
 }
 
+.ad-card--inspect .ad-card__icon {
+  background: #ede9f7;
+  color: #5b3ea6;
+}
+
 .ad-card--chart {
   display: flex;
   flex-direction: column;

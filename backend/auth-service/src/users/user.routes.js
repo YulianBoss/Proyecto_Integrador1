@@ -7,7 +7,8 @@ const {
     getAllUsers,
     getUserById,
     updateUser,
-    toggleUserStatus
+    toggleUserStatus,
+    getTecnicosByLocation
 } = require('./user.controller');
 
 const { verifyToken, verifyAdmin } = require('../middlewares/auth');
@@ -15,6 +16,9 @@ const { verifyToken, verifyAdmin } = require('../middlewares/auth');
 // ─── PÚBLICAS ────────────────────────────────
 router.post('/register', register);
 router.post('/login', login);
+
+// ─── SERVICIO INTERNO (cualquier token válido) ───────────────
+router.get('/tecnicos', verifyToken, getTecnicosByLocation);
 
 // ─── SOLO ADMIN ──────────────────────────────
 router.get('/', verifyToken, verifyAdmin, getAllUsers);

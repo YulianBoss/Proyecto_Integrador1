@@ -19,4 +19,11 @@ const verifyProductor = (req, res, next) => {
     next();
 };
 
-module.exports = { verifyToken, verifyProductor };
+const verifyTecnico = (req, res, next) => {
+    if (req.user.rol !== 'tecnico') {
+        return res.status(403).json({ message: 'Acceso denegado: solo técnicos pueden acceder a este recurso' });
+    }
+    next();
+};
+
+module.exports = { verifyToken, verifyProductor, verifyTecnico };

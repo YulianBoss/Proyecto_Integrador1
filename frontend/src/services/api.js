@@ -13,6 +13,7 @@ export const authAPI = {
   login:        (data)     => axios.post(`${AUTH_URL}/api/users/login`, data),
   register:     (data)     => axios.post(`${AUTH_URL}/api/users/register`, data),
   getUsers:     (params)   => axios.get(`${AUTH_URL}/api/users`, { headers: getHeaders(), params }),
+  getTecnicos:  (params)   => axios.get(`${AUTH_URL}/api/users/tecnicos`, { headers: getHeaders(), params }),
   updateUser:   (id, data) => axios.put(`${AUTH_URL}/api/users/${id}`, data, { headers: getHeaders() }),
   toggleEstado: (id, data) => axios.patch(`${AUTH_URL}/api/users/${id}/estado`, data, { headers: getHeaders() }),
   getSolicitudes:(params)  => axios.get(`${AUTH_URL}/api/solicitudes`, { headers: getHeaders(), params }),
@@ -60,4 +61,10 @@ export const inspeccionesAPI = {
   solicitar:      (data)   => axios.post(`${INSPECTION_URL}/api/inspections/solicitar`, data, { headers: getHeaders() }),
   misSolicitudes: (params) => axios.get(`${INSPECTION_URL}/api/inspections/mis-solicitudes`, { headers: getHeaders(), params }),
   getById:        (id)     => axios.get(`${INSPECTION_URL}/api/inspections/${id}`, { headers: getHeaders() }),
+}
+
+export const tecnicoAPI = {
+  misInspecciones: (params) => axios.get(`${INSPECTION_URL}/api/inspections/tecnico/mis-inspecciones`, { headers: getHeaders(), params }),
+  iniciar:         (id)     => axios.patch(`${INSPECTION_URL}/api/inspections/${id}/iniciar`, {}, { headers: getHeaders() }),
+  completar:       (id, data) => axios.patch(`${INSPECTION_URL}/api/inspections/${id}/completar`, data, { headers: getHeaders() }),
 }

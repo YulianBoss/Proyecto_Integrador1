@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { authAPI } from '../services/api'
+import COLOMBIA_DEPARTAMENTOS from '../data/colombiaMunicipios'
 import './Register.css'
 
 const ROLES = [
@@ -112,11 +113,17 @@ function IconInfo({ className = '' }) {
   )
 }
 
+const S = { fill:'none', stroke:'currentColor', strokeWidth:'1.8', strokeLinecap:'round', strokeLinejoin:'round' }
+function IcoPin() {
+  return <svg viewBox="0 0 24 24" {...S} style={{ width:15, height:15, flexShrink:0 }}><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+}
+
 export default function Register() {
   const [step, setStep] = useState(1)
   const [form, setForm] = useState({
     nombre_completo: '', correo: '', password: '', confirmar: '',
-    rol: '', num_identificacion: '', telefono: '', tarjeta_profesional: ''
+    rol: '', num_identificacion: '', telefono: '', tarjeta_profesional: '',
+    departamento: '', municipio: '',
   })
   const [fieldErrors, setFieldErrors] = useState({})
   const [error, setError]     = useState('')
@@ -164,6 +171,8 @@ export default function Register() {
       ...prev,
       rol: val,
       tarjeta_profesional: val === 'tecnico' ? prev.tarjeta_profesional : '',
+      departamento: val === 'tecnico' ? prev.departamento : '',
+      municipio:    val === 'tecnico' ? prev.municipio    : '',
     }))
     if (val !== 'tecnico' && fieldErrors.tarjeta_profesional) {
       setFieldErrors(prev => ({ ...prev, tarjeta_profesional: '' }))
@@ -195,6 +204,8 @@ export default function Register() {
       } else if (!VALIDATIONS.tarjeta_profesional.test(tarjeta)) {
         errors.tarjeta_profesional = VALIDATIONS.tarjeta_profesional.msg
       }
+      if (!form.departamento) errors.departamento = 'Selecciona el departamento de ubicación.'
+      if (!form.municipio)    errors.municipio    = 'Selecciona el municipio de ubicación.'
     }
 
     setFieldErrors(errors)
@@ -220,6 +231,8 @@ export default function Register() {
         tarjeta_profesional: form.rol === 'tecnico'
           ? form.tarjeta_profesional.trim()
           : undefined,
+        departamento: form.rol === 'tecnico' ? form.departamento : undefined,
+        municipio:    form.rol === 'tecnico' ? form.municipio    : undefined,
       })
       setSuccess(true)
     } catch (err) {
@@ -430,6 +443,56 @@ export default function Register() {
                     required
                   />
                   <FieldError name="tarjeta_profesional" />
+                </div>
+              )}
+
+              {form.rol === 'tecnico' && (
+                <div className="ubicacion-tecnico-box">
+                  <div className="ubicacion-tecnico-box__header">
+                    <IcoPin />
+                    <span>Ubicación del asistente técnico</span>
+                  </div>
+                  <div className="reg-fields-row">
+                    <div className="field">
+                      <label className="field__label">Departamento *</label>
+                      <select
+                        className={`field__input field__input--plain ${fieldErrors.departamento ? 'field__input--error' : ''}`}
+                        value={form.departamento}
+                        onChange={e => {
+                          setForm(prev => ({ ...prev, departamento: e.target.value, municipio: '' }))
+                          if (fieldErrors.departamento) setFieldErrors(prev => ({ ...prev, departamento: '' }))
+                        }}
+                      >
+                        <option value="">-- Selecciona --</option>
+                        {[...COLOMBIA_DEPARTAMENTOS]
+                          .sort((a, b) => a.departamento.localeCompare(b.departamento))
+                          .map(d => (
+                            <option key={d.departamento} value={d.departamento}>{d.departamento}</option>
+                          ))}
+                      </select>
+                      <FieldError name="departamento" />
+                    </div>
+                    <div className="field">
+                      <label className="field__label">Municipio *</label>
+                      <select
+                        className={`field__input field__input--plain ${fieldErrors.municipio ? 'field__input--error' : ''}`}
+                        value={form.municipio}
+                        disabled={!form.departamento}
+                        onChange={e => {
+                          setForm(prev => ({ ...prev, municipio: e.target.value }))
+                          if (fieldErrors.municipio) setFieldErrors(prev => ({ ...prev, municipio: '' }))
+                        }}
+                      >
+                        <option value="">-- Selecciona --</option>
+                        {(COLOMBIA_DEPARTAMENTOS.find(d => d.departamento === form.departamento)?.municipios || [])
+                          .sort((a, b) => a.localeCompare(b))
+                          .map(m => (
+                            <option key={m} value={m}>{m}</option>
+                          ))}
+                      </select>
+                      <FieldError name="municipio" />
+                    </div>
+                  </div>
                 </div>
               )}
 

@@ -26,13 +26,6 @@ const DASH_CARDS = [
   },
 ]
 
-const PEST_INDEX = [
-  { label: 'Broca', value: 84, color: 'var(--ad-bar-a)' },
-  { label: 'Roya', value: 61, color: 'var(--ad-bar-b)' },
-  { label: 'Mosca Blanca', value: 47, color: 'var(--ad-bar-c)' },
-  { label: 'Trips', value: 35, color: 'var(--ad-bar-d)' },
-]
-
 export default function AdminDashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
@@ -76,29 +69,24 @@ export default function AdminDashboard() {
           </article>
         ))}
 
-        <article className="ad-card ad-card--chart">
-          <div className="ad-chart__header">
-            <h3>Indice de Plagas en Cultivos</h3>
-            <span>Actualizado hoy</span>
+        <article
+          className="ad-card ad-card--inspect"
+          style={{ animationDelay: `${3 * 110}ms` }}
+          onClick={() => goTo('/admin/inspecciones')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+              event.preventDefault()
+              goTo('/admin/inspecciones')
+            }
+          }}
+        >
+          <div className="ad-card__body">
+            <h3>Consultar Inspecciones</h3>
+            <p>Revisa y supervisa las inspecciones fitosanitarias registradas</p>
           </div>
-
-          <div className="ad-bars" aria-label="indice de plagas">
-            {PEST_INDEX.map((item, idx) => (
-              <div key={item.label} className="ad-bar-row" style={{ animationDelay: `${130 + idx * 90}ms` }}>
-                <div className="ad-bar-row__top">
-                  <strong>{item.label}</strong>
-                  <small>{item.value}%</small>
-                </div>
-                <div className="ad-bar-track">
-                  <span className="ad-bar-fill" style={{ width: `${item.value}%`, background: item.color }} />
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button type="button" className="ad-chart__cta" onClick={() => goTo('/admin/plagas')}>
-            Ver detalle de plagas
-          </button>
+          <div className="ad-card__icon" aria-hidden="true"><IconClipboard /></div>
         </article>
       </div>
     </section>
@@ -115,4 +103,8 @@ function IconBug() {
 
 function IconFlower() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="2.4"/><circle cx="12" cy="6.8" r="2.1"/><circle cx="16.4" cy="9" r="2.1"/><circle cx="16" cy="14" r="2.1"/><circle cx="8" cy="14" r="2.1"/><circle cx="7.6" cy="9" r="2.1"/></svg>
+}
+
+function IconClipboard() {
+  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
 }

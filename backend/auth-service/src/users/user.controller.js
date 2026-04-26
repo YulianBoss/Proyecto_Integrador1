@@ -6,7 +6,7 @@ const jwt = require('jsonwebtoken');
 // 🔓 PÚBLICO — REGISTRO (productor o tecnico)
 // ─────────────────────────────────────────────
 const register = async (req, res) => {
-    const { nombre_completo, correo, password, rol, num_identificacion, telefono, tarjeta_profesional } = req.body;
+    const { nombre_completo, correo, password, rol, num_identificacion, telefono, tarjeta_profesional, departamento, municipio } = req.body;
 
     if (!nombre_completo || !correo || !password || !rol || !num_identificacion || !telefono) {
         return res.status(400).json({ message: 'Faltan datos obligatorios' });
@@ -50,6 +50,10 @@ const register = async (req, res) => {
         if (!/^\d+$/.test(String(tarjeta_profesional).trim())) {
             return res.status(400).json({ message: 'La tarjeta profesional debe contener solo números' });
         }
+
+        if (!departamento || !municipio) {
+            return res.status(400).json({ message: 'El departamento y municipio de ubicación son obligatorios para el Asistente Técnico' });
+        }
     }
 
     const tarjetaProfesionalLimpia = rol === 'tecnico'
@@ -73,8 +77,8 @@ const register = async (req, res) => {
 
             const insertQuery = `
                 INSERT INTO usuarios 
-                (nombre_completo, correo, contrasena_hash, rol, estado, num_identificacion, tarjeta_profesional, telefono)
-                VALUES (?, ?, ?, ?, 'pendiente', ?, ?, ?)
+                (nombre_completo, correo, contrasena_hash, rol, estado, num_identificacion, tarjeta_profesional, telefono, departamento, municipio)
+                VALUES (?, ?, ?, ?, 'pendiente', ?, ?, ?, ?, ?)
             `;
 
             db.query(insertQuery, [
@@ -84,7 +88,9 @@ const register = async (req, res) => {
                 rol,
                 identificacionLimpia,
                 tarjetaProfesionalLimpia,
-                telefonoLimpio
+                telefonoLimpio,
+                rol === 'tecnico' ? String(departamento).trim() : null,
+                rol === 'tecnico' ? String(municipio).trim() : null,
             ], (err, insertResult) => {
                 if (err) {
                     console.error(err);
@@ -156,22 +162,26 @@ const login = (req, res) => {
             return res.status(401).json({ message: 'Credenciales inválidas' });
         }
 
-        const token = jwt.sign(
-            { id: user.id, rol: user.rol },
-            process.env.JWT_SECRET,
-            { expiresIn: '2h' }
-        );
+        const jwtPayload = { id: user.id, rol: user.rol };
+        if (user.rol === 'tecnico') {
+            jwtPayload.departamento = user.departamento || null;
+            jwtPayload.municipio    = user.municipio    || null;
+        }
 
-        res.json({
-            message: 'Login exitoso ✅',
-            token,
-            user: {
-                id: user.id,
-                nombre: user.nombre_completo,
-                rol: user.rol,
-                correo: user.correo
-            }
-        });
+        const token = jwt.sign(jwtPayload, process.env.JWT_SECRET, { expiresIn: '2h' });
+
+        const userResponse = {
+            id: user.id,
+            nombre: user.nombre_completo,
+            rol: user.rol,
+            correo: user.correo,
+        };
+        if (user.rol === 'tecnico') {
+            userResponse.departamento = user.departamento || null;
+            userResponse.municipio    = user.municipio    || null;
+        }
+
+        res.json({ message: 'Login exitoso ✅', token, user: userResponse });
     });
 };
 
@@ -179,16 +189,18 @@ const login = (req, res) => {
 // 🔒 ADMIN — LISTAR TODOS LOS USUARIOS
 // ─────────────────────────────────────────────
 const getAllUsers = (req, res) => {
-    const { estado, rol } = req.query;
+    const { estado, rol, departamento, municipio } = req.query;
 
     let query = `
-        SELECT id, nombre_completo, correo, rol, estado, num_identificacion, tarjeta_profesional, telefono, fecha_registro
+        SELECT id, nombre_completo, correo, rol, estado, num_identificacion, tarjeta_profesional, telefono, departamento, municipio, fecha_registro
         FROM usuarios WHERE 1=1
     `;
     const params = [];
 
     if (estado) { query += ` AND estado = ?`; params.push(estado); }
     if (rol)    { query += ` AND rol = ?`;    params.push(rol); }
+    if (departamento) { query += ` AND departamento = ?`; params.push(departamento); }
+    if (municipio)    { query += ` AND municipio = ?`;    params.push(municipio); }
 
     query += ` ORDER BY fecha_registro DESC`;
 
@@ -208,7 +220,7 @@ const getUserById = (req, res) => {
     const { id } = req.params;
 
     const query = `
-        SELECT id, nombre_completo, correo, rol, estado, num_identificacion, tarjeta_profesional, telefono, fecha_registro
+        SELECT id, nombre_completo, correo, rol, estado, num_identificacion, tarjeta_profesional, telefono, departamento, municipio, fecha_registro
         FROM usuarios WHERE id = ?
     `;
 
@@ -353,11 +365,38 @@ const toggleUserStatus = (req, res) => {
     });
 };
 
+// ─────────────────────────────────────────────
+// 🔒 CUALQUIER ROL AUTENTICADO — LISTAR TÉCNICOS (uso interno entre servicios)
+// Solo expone id y nombre de técnicos activos, opcionalmente filtrados por ubicación
+// ─────────────────────────────────────────────
+const getTecnicosByLocation = (req, res) => {
+    const { departamento, municipio } = req.query;
+
+    let query = `
+        SELECT id, nombre_completo, departamento, municipio
+        FROM usuarios
+        WHERE rol = 'tecnico' AND estado = 'activo'
+    `;
+    const params = [];
+
+    if (departamento) { query += ` AND departamento = ?`; params.push(departamento); }
+    if (municipio)    { query += ` AND municipio = ?`;    params.push(municipio); }
+
+    db.query(query, params, (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ message: 'Error al obtener técnicos' });
+        }
+        res.json(results);
+    });
+};
+
 module.exports = {
     register,
     login,
     getAllUsers,
     getUserById,
     updateUser,
-    toggleUserStatus
+    toggleUserStatus,
+    getTecnicosByLocation
 };
