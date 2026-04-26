@@ -364,7 +364,7 @@ export default function LotesPage() {
               <table className="p-table">
                 <thead>
                   <tr>
-                    <th>Codigo</th><th>Predio asociado</th><th>Hectareas</th><th>Cultivo activo</th>
+                    <th>Codigo</th><th>Hectareas</th><th>Cultivo activo</th>
                     <th>Estado</th><th>Fecha registro</th><th>Acciones</th>
                   </tr>
                 </thead>
@@ -375,7 +375,6 @@ export default function LotesPage() {
                     return (
                       <tr key={l.id}>
                         <td><strong>{l.codigo}</strong></td>
-                        <td className="p-td-muted">{l.predio_nombre || 'Sin predio'}</td>
                         <td className="p-td-muted">{l.area_ha} ha</td>
                         <td>
                           {cultActivo ? (

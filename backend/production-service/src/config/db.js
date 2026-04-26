@@ -1,13 +1,110 @@
 const mysql = require('mysql2');
 require('dotenv').config();
 
-const connection = mysql.createConnection({
+const DB_CONFIG = {
     host: process.env.DB_HOST,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     port: process.env.DB_PORT
-});
+};
+
+let connection;
+
+function createConnection() {
+    connection = mysql.createConnection(DB_CONFIG);
+
+    connection.connect((err) => {
+        if (err) {
+            console.error('❌ Error DB:', err);
+            setTimeout(createConnection, 5000);
+            return;
+        }
+        console.log('✅ DB production-service conectada');
+        ensureLotesPredioColumn(() => ensureSchema());
+    });
+
+    connection.on('error', (err) => {
+        console.error('❌ DB error:', err.message);
+        if (err.code === 'PROTOCOL_CONNECTION_LOST' || err.code === 'ECONNRESET' || err.fatal) {
+            console.log('🔄 Reconectando DB...');
+            createConnection();
+        }
+    });
+}
+
+// Proxy para que los módulos que importan este archivo sigan funcionando
+const handler = {
+    get(_, prop) { return typeof connection[prop] === 'function' ? connection[prop].bind(connection) : connection[prop]; },
+    set(_, prop, value) { connection[prop] = value; return true; }
+};
+const connectionProxy = new Proxy({}, handler);
+
+// ── Municipios de Colombia (fuente: colombiaMunicipios.js del frontend) ──────
+const MUNICIPIOS_COLOMBIA = [
+    { departamento: 'Amazonas',            municipios: ['Leticia','Puerto Nariño','El Encanto','La Chorrera','La Pedrera','Mirití-Paraná','Puerto Alegría','Puerto Arica','Puerto Santander','Tarapacá'] },
+    { departamento: 'Antioquia',           municipios: ['Medellín','Bello','Itagüí','Envigado','Apartadó','Turbo','Rionegro','Caucasia','Marinilla','La Estrella','Sabaneta','Copacabana','Girardota','Barbosa','Caldas','La Ceja','El Retiro','El Carmen de Viboral','Santa Fe de Antioquia','Yarumal','Andes','Ciudad Bolívar','Urrao','Montería (Antioquia)','Necoclí','San Juan de Urabá','Chigorodó','Carepa','Mutatá','Frontino','Dabeiba','Peque','Buriticá','Anzá','Armenia (Antioquia)','Olaya','Liborina','Sabanalarga','Abriaquí','Giraldo','Sopetrán'] },
+    { departamento: 'Arauca',              municipios: ['Arauca','Arauquita','Saravena','Tame','Fortul','Puerto Rondón','Cravo Norte'] },
+    { departamento: 'Atlántico',           municipios: ['Barranquilla','Soledad','Malambo','Sabanalarga','Baranoa','Santo Tomás','Palmar de Varela','Ponedera','Juan de Acosta','Usiacurí','Piojó','Tubará','Puerto Colombia','Galapa','Polonuevo','Repelón','Luruaco','Campo de la Cruz','Candelaria','Manatí','Suán'] },
+    { departamento: 'Bogotá D.C.',         municipios: ['Bogotá D.C.'] },
+    { departamento: 'Bolívar',             municipios: ['Cartagena','Magangué','Mompox','El Carmen de Bolívar','Turbaco','Arjona','San Estanislao','Santa Rosa','Margarita','Simití','Rioviejo','Pinillos','Barranco de Loba','Tiquisio','Achí','San Jacinto','El Guamo','Córdoba','Cicuco'] },
+    { departamento: 'Boyacá',              municipios: ['Tunja','Duitama','Sogamoso','Chiquinquirá','Paipa','Villa de Leyva','Moniquirá','Soatá','Nobsa','Tibasosa','Firavitoba','Iza','Tuta','Combita','Motavita','Cómbita','Samacá','Ráquira','Sáchica','Sutamarchán','Tinjacá','Arcabuco','Chitaraque','Güicán','El Cocuy','Chiscas','Socha','Paz de Río','Belén','Cerinza','Tutazá','Betéitiva','Santa Rosa de Viterbo'] },
+    { departamento: 'Caldas',              municipios: ['Manizales','La Dorada','Chinchiná','Villamaría','Anserma','Aranzazu','Belalcázar','Filadelfia','La Merced','Manzanares','Marmato','Marquetalia','Marulanda','Neira','Norcasia','Pácora','Palestina','Pensilvania','Riosucio','Risaralda','Salamina','Samaná','San José','Supía','Victoria','Viterbo'] },
+    { departamento: 'Caquetá',             municipios: ['Florencia','San Vicente del Caguán','El Paujil','Puerto Rico','Belén de los Andaquíes','Cartagena del Chairá','Curillo','El Doncello','La Montañita','Milán','Morelia','Solano','Solita','Valparaíso','Albania'] },
+    { departamento: 'Casanare',            municipios: ['Yopal','Aguazul','Villanueva','Paz de Ariporo','Trinidad','Hato Corozal','Nunchía','Orocué','Recetor','Sácama','San Luis de Palenque','Támara','Tauramena','Monterrey','Chámeza','Maní','Pore'] },
+    { departamento: 'Cauca',               municipios: ['Popayán','Santander de Quilichao','Puerto Tejada','Patía','Timbío','Piendamó','El Tambo','La Vega','Silvia','Cajibío','Bolívar','Almaguer','Argelia','Balboa','Buenos Aires','Caldono','Caloto','Corinto','Florencia','Guachené','Guapí','Inzá','Jambaló','La Sierra','Mercaderes','Miranda','Morales','Padilla','Páez','Puracé','Rosas','San Sebastián','Santa Rosa','Sotará','Suárez','Sucre','Timbiquí','Toribío','Totoró','Villa Rica'] },
+    { departamento: 'Cesar',               municipios: ['Valledupar','Aguachica','Bosconia','La Jagua de Ibirico','Codazzi','El Copey','Chimichagua','Chiriguaná','Curumaní','El Paso','Gamarra','González','La Gloria','La Paz','Manaure Balcón del Cesar','Pailitas','Pelaya','Pueblo Bello','Río de Oro','San Alberto','San Diego','San Martín','Tamalameque'] },
+    { departamento: 'Chocó',               municipios: ['Quibdó','Istmina','Riosucio','Acandí','Alto Baudó','Atrato','Bagadó','Bahía Solano','Bajo Baudó','Bojayá','Carmen del Darien','Cértegui','Condoto','El Carmen de Atrato','Juradó','Litoral del San Juan','Lloró','Medio Atrato','Medio Baudó','Medio San Juan','Nóvita','Nuquí','Río Iro','Río Quito','Sipi','Tadó','Unguía','Unión Panamericana'] },
+    { departamento: 'Córdoba',             municipios: ['Montería','Lorica','Sahagún','Cereté','Planeta Rica','Tierralta','Montelíbano','Chinú','San Pelayo','Ciénaga de Oro','Moñitos','Los Córdobas','Puerto Escondido','San Antero','San Bernardo del Viento','San Carlos','San José de Uré','Ayapel','Buenavista','Canalete','Cotorra','La Apartada','Momil','Montos','Purísima','Tuchín','Valencia'] },
+    { departamento: 'Cundinamarca',        municipios: ['Soacha','Fusagasugá','Zipaquirá','Facatativá','Chía','Cajicá','Mosquera','Madrid','Funza','Girardot','Arbeláez','La Mesa','Tocancipá','Gachancipá','Sopó','Briceño','Cogua','Cucunubá','El Rosal','Guasca','Guatavita','La Calera','La Vega (Cundinamarca)','Machetá','Manta','Nemocón','Nimaima','Nocaima','Pacho','Paime','Pasca','San Bernardo','Silvania','Simijaca','Suesca','Sutatausa','Tabio','Tausa','Tenjo','Ubaté','Une','Venecia','Villa de San Diego de Ubaté','Villeta','Viota','Yacopí','Nilo','Ricaurte','Agua de Dios','Beltrán','Gutiérrez'] },
+    { departamento: 'Guainía',             municipios: ['Inírida','Barrancominas','Cacahual','La Guadalupe','Mapiripana','Morichal','Pana Pana','Puerto Colombia','San Felipe'] },
+    { departamento: 'Guaviare',            municipios: ['San José del Guaviare','El Retorno','Calamar','Miraflores'] },
+    { departamento: 'Huila',               municipios: ['Neiva','Pitalito','Garzón','La Plata','Campoalegre','Rivera','Palermo','San Agustín','Isnos','Acevedo','Aipe','Algeciras','Altamira','Baraya','Colombia','Elías','Gigante','Guadalupe','Hobo','Iquira','Íquira','La Argentina','La Salina (Huila)','Nátaga','Oporapa','Paicol','Palestina','Saladoblanco','Santa María','Suaza','Tarqui','Tello','Teruel','Tesalia','Timana','Villagorgona','Villavieja','Yaguará'] },
+    { departamento: 'La Guajira',          municipios: ['Riohacha','Maicao','Uribia','Manaure','San Juan del Cesar','Albania','Barrancas','Dibulla','Distracción','El Molino','Fonseca','Hatonuevo','La Jagua del Pilar','Villanueva','Urumita'] },
+    { departamento: 'Magdalena',           municipios: ['Santa Marta','Ciénaga','Fundación','El Banco','Plato','Ariguaní','Zona Bananera','Aracataca','Pivijay','El Piñón','Remolino','Salamina','Concordia','Nueva Granada','Pedraza','San Zenón','Santa Bárbara de Pinto','Sitio Nuevo','Tenerife','Guamal','Zapayán'] },
+    { departamento: 'Meta',                municipios: ['Villavicencio','Acacías','Granada','San Martín','Puerto López','Restrepo','Cumaral','El Dorado','El Castillo','Fuente de Oro','La Macarena','La Uribe','Lejanías','Mapiripán','Mesetas','Puerto Concordia','Puerto Gaitán','Puerto Lleras','Puerto Rico','San Carlos de Guaroa','San Juan de Arama','San Juanito','Vista Hermosa','Barranca de Upía'] },
+    { departamento: 'Nariño',              municipios: ['Pasto','Ipiales','Tumaco','La Unión','Túquerres','Samaniego','Buesaco','Chachagüí','Consacá','Contadero','Córdoba','Cuaspud','Cumbal','Cumbitara','El Charco','El Peñol','El Rosario','El Tablón de Gómez','El Tambo','Francisco Pizarro','Guachucal','Guaitarilla','Gualmatán','Iles','Imués','La Cruz','La Florida','La Llanada','La Tola','Leiva','Linares','Los Andes','Magüí','Mallama','Mosquera','Nariño','Olaya Herrera','Ospina','Policarpa','Potosí','Providencia','Puerres','Pupiales','Ricaurte','Roberto Payán','Salahonda','San Bernardo','San Lorenzo','San Pablo','San Pedro de Cartago','Santa Bárbara','Santacruz','Sapuyes','Taminango','Tangua'] },
+    { departamento: 'Norte de Santander',  municipios: ['Cúcuta','Ocaña','Pamplona','Villa del Rosario','Los Patios','Tibú','Chinácota','Convención','Durania','El Carmen','El Tarra','El Zulia','Gramalote','Hacarí','Herrán','La Esperanza','La Playa','Labateca','Lourdes','Mutiscua','Pamplonita','Puerto Santander','Ragonvalia','Salazar','San Calixto','San Cayetano','Santiago','Sardinata','Silos','Teorama','Toledo','Villacaro'] },
+    { departamento: 'Putumayo',            municipios: ['Mocoa','Puerto Asís','Orito','Valle del Guamuez','Sibundoy','Colón','San Francisco','San Miguel','Santiago','Villagarzón','Puerto Guzmán','Puerto Leguízamo','Puerto Caicedo'] },
+    { departamento: 'Quindío',             municipios: ['Armenia','Calarcá','Montenegro','Quimbaya','La Tebaida','Circasia','Buenavista','Córdoba','Filandia','Génova','Pijao','Salento'] },
+    { departamento: 'Risaralda',           municipios: ['Pereira','Dosquebradas','Santa Rosa de Cabal','La Virginia','Marsella','Apía','Balboa','Belén de Umbría','Guática','La Celia','Mistrató','Pueblo Rico','Quinchía','Santuario'] },
+    { departamento: 'San Andrés y Providencia', municipios: ['San Andrés','Providencia'] },
+    { departamento: 'Santander',           municipios: ['Bucaramanga','Floridablanca','Girón','Piedecuesta','Barrancabermeja','San Gil','Socorro','Vélez','Barbosa','Lebrija','Málaga','Charalá','Concepción','Contratación','Cuití','El Guacamayo','El Playón','Encino','Galán','Gámbita','Guaca','Guadalupe','Guapotá','Guavatá','Güepsa','Hato','Jesús María','La Belleza','Landázuri','La Paz','Matanza','Mogotes','Molagavita','Ocamonte','Oiba','Onzaga','Palmar','Palmas del Socorro','Páramo','Pinchote','Puente Nacional','Puerto Parra','Puerto Wilches','Rionegro','Sabana de Torres','San Andrés','San Benito','San Joaquín','San José de Miranda','San Miguel','San Vicente de Chucurí','Santa Bárbara (Santander)','Santa Helena del Opón','Simacota','Suaita','Sucre','Suratá','Tona','Valle de San José','Vetas','Villanueva','Zapatoca'] },
+    { departamento: 'Sucre',               municipios: ['Sincelejo','Corozal','Sampués','San Marcos','Tolú','San Onofre','Coveñas','Santiago de Tolú','Ovejas','Sincé','El Roble','Galeras','Los Palmitos','Majagual','Morroa','San Benito Abad','San Juan de Betulia','San Luis de Sincé','San Pedro','Sucre','Tolú Viejo'] },
+    { departamento: 'Tolima',              municipios: ['Ibagué','Espinal','Melgar','Honda','Líbano','Chaparral','Mariquita','Fresno','Ambalema','Anzoátegui','Armero-Guayabal','Ataco','Cajamarca','Carmen de Apicalá','Casabianca','Coello','Coyaima','Cunday','Dolores','El Guamo','Falan','Flandes','Guamo','Herveo','Icononzo','Lérida','Murillo','Natagaima','Ortega','Palocabildo','Piedras','Planadas','Prado','Purificación','Rio Blanco','Roncesvalles','Rovira','Saldaña','San Antonio','San Luis','Santa Isabel','Suárez','Valle de San Juan','Venadillo','Villahermosa','Villarrica'] },
+    { departamento: 'Valle del Cauca',     municipios: ['Cali','Buenaventura','Palmira','Buga','Tuluá','Cartago','Jamundí','Candelaria','Yumbo','Florida','Pradera','Zarzal','La Unión','Roldanillo','Ansermanuevo','Alcalá','Andalucía','Argelia','Bolívar','Bugalagrande','Caicedonia','Calima','Dagua','El Águila','El Cairo','El Cerrito','El Dovio','Ginebra','Guacarí','La Cumbre','La Victoria','Obando','Restrepo','Riofrío','San Pedro','Sevilla','Toro','Trujillo','Ulloa','Versalles','Vijes','Yotoco'] },
+    { departamento: 'Vaupés',              municipios: ['Mitú','Carurú','Pacoa','Papunaua','Taraira','Yavaraté'] },
+    { departamento: 'Vichada',             municipios: ['Puerto Carreño','Cumaribo','La Primavera','Santa Rosalía'] },
+];
+
+// Genera 1 predio por cada municipio de Colombia con nombre, ubicación y área variada
+const _PREFIJOS = ['Hacienda', 'Finca', 'Predio', 'Rancho', 'Parcela', 'El Campo de', 'La Granja de', 'Los Llanos de', 'Las Flores de', 'La Esperanza de'];
+const _VEREDAS  = ['Vereda El Centro', 'Vereda La Palma', 'Vereda El Carmen', 'Vereda La Esperanza', 'Vereda San José',
+                   'Vereda Las Brisas', 'Vereda El Porvenir', 'Vereda La Unión', 'Vereda El Progreso', 'Vereda La Paz'];
+// Áreas en hectáreas realistas variadas por tipo de región (se ciclan)
+const _AREAS = [15.50, 8.75, 22.00, 5.30, 45.80, 12.00, 30.25, 7.60, 18.40, 50.00,
+                3.50,  60.00, 25.75, 9.20, 38.00, 11.50, 14.00, 100.00, 6.80, 28.50];
+
+const _seen = new Set();
+let _idx = 0;
+const _predioRows = MUNICIPIOS_COLOMBIA.flatMap(({ departamento, municipios }) =>
+    municipios.map(municipio => {
+        const prefijo  = _PREFIJOS[_idx % _PREFIJOS.length];
+        const vereda   = _VEREDAS[_idx % _VEREDAS.length];
+        const area     = _AREAS[_idx % _AREAS.length].toFixed(2);
+        const base     = _seen.has(municipio) ? `${municipio} (${departamento})` : municipio;
+        const nombre   = `${prefijo} ${base}`;
+        _seen.add(municipio);
+        _idx++;
+        const esc = s => s.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+        return `(1, '${esc(nombre)}', '${esc(departamento)}', '${esc(municipio)}', '${esc(vereda)}', ${area})`;
+    })
+);
+
+const INSERT_PREDIOS_MUNICIPIOS = `INSERT IGNORE INTO predios_produccion
+     (productor_id, nombre_identificacion, departamento, municipio, vereda_direccion, area_ha)
+     VALUES
+     ${_predioRows.join(',\n     ')}`;
 
 const schemaStatements = [
     `ALTER TABLE lugares_produccion
@@ -44,119 +141,13 @@ const schemaStatements = [
         HAVING SUM(es_principal = 1) = 0
      ) faltantes ON faltantes.id = lp.id
         SET lp.es_principal = 1`,
-    `INSERT IGNORE INTO predios_produccion
-         (productor_id, nombre_identificacion, departamento, municipio, vereda_direccion, area_ha)
-         VALUES
-         (1, 'Finca Brisa Serena',      'Santander',          'Piedecuesta',             'Vereda El Volador',          14.30),
-         (1, 'Predio Monte Claro',      'Cundinamarca',       'La Mesa',                 'Vereda El Ocaso',            11.75),
-         (1, 'Hacienda Valle Azul',     'Valle del Cauca',    'Palmira',                 'Vereda Bolo San Isidro',     36.90),
-         (1, 'Lote La Ceiba',           'Tolima',             'Melgar',                  'Vereda La Palmara',           8.45),
-         (1, 'Granja El Laurel',        'Boyaca',             'Paipa',                   'Vereda Canos',               19.80),
-         (1, 'Finca Agua Nueva',        'Meta',               'Restrepo',                'Vereda Caney Alto',          27.10),
-         (1, 'Predio Camino Real',      'Antioquia',          'La Ceja',                 'Vereda San Rafael',          10.25),
-         (1, 'Campo Altamira',          'Cesar',              'La Paz',                  'Vereda Varas Blancas',       41.60),
-         (1, 'Parcela Sol del Este',    'Narino',             'Ipiales',                 'Vereda Yaramal',             12.95),
-         (1, 'Estancia La Rivera',      'Risaralda',          'Marsella',                'Vereda El Nivel',            23.40),
-         (1, 'Finca Cerro Alto',        'Huila',              'Garzon',                  'Vereda El Meson',            17.35),
-         (1, 'Predio Palma Real',       'Cordoba',            'Cerete',                  'Vereda Martinez',            29.70),
-         (1, 'Granja Horizonte Vivo',   'Sucre',              'Corozal',                 'Vereda Hato Nuevo',          15.15),
-         (1, 'Lote Tierra Noble',       'Quindio',            'Montenegro',              'Vereda Once Casas',           7.90),
-         (1, 'Hacienda Prado Largo',    'Magdalena',          'Cienaga',                 'Vereda Sevillano',           52.20),
-         (1, 'Finca Bosque Claro',      'Caldas',             'Neira',                   'Vereda Aguabonita',          21.85),
-         (1, 'Predio Alto Cedro',       'Cauca',              'Santander de Quilichao',  'Vereda San Pedro',           18.10),
-         (1, 'Campo El Trigal',         'Putumayo',           'Villagarzon',             'Vereda La Castellana',       33.25),
-         (1, 'Parcela Nube Blanca',     'Arauca',             'Tame',                    'Vereda Botalon',             24.55),
-         (1, 'Estancia Los Almendros',  'Bolivar',            'Turbaco',                 'Vereda Canaveral',           13.65),
-         (1, 'Finca Viento Norte',      'La Guajira',         'Fonseca',                 'Vereda Conejo',              46.35),
-         (1, 'Predio Fuente Clara',     'Atlantico',          'Sabanalarga',             'Vereda Cascajal',             9.85),
-         (1, 'Granja La Arboleda',      'Norte de Santander', 'Ocana',                   'Vereda Aguas Claras',        16.45),
-         (1, 'Lote Mirador del Sol',    'Caqueta',            'El Doncello',             'Vereda Bellavista',          20.70),
-         (1, 'Hacienda Llano Verde',    'Casanare',           'Aguazul',                 'Vereda Cupiagua',            58.90),
-         (1, 'Finca El Recuerdo',       'Santander',          'Barichara',               'Vereda El Bosque',           24.82),
-         (1, 'Hacienda La Esperanza',   'Caldas',             'Manizales',               'Vereda Alto Bonito',         25.39),
-         (1, 'Granja Los Naranjos',     'Meta',               'Villavicencio',           'Vereda La Unión',            25.96),
-         (1, 'Lote San Gabriel',        'Nariño',             'Pasto',                   'Vereda El Porvenir',         26.53),
-         (1, 'Finca El Diamante',       'Quindío',            'Armenia',                 'Vereda Buenavista',          27.1),
-         (1, 'Hacienda La Primavera',   'Risaralda',          'Pereira',                 'Vereda La Bella',            27.67),
-         (1, 'Granja El Paraíso',       'Valle del Cauca',    'Palmira',                 'Vereda La Reforma',          28.24),
-         (1, 'Finca Monteverde',        'Cauca',              'Popayán',                 'Vereda Santa Rosa',          28.81),
-         (1, 'Hacienda El Edén',        'Cesar',              'Valledupar',              'Vereda El Carmen',           29.38),
-         (1, 'Finca La Ilusión',        'Magdalena',          'Santa Marta',             'Vereda Minca',               29.95),
-         (1, 'Granja Los Alpes',        'Tolima',             'Espinal',                 'Vereda La Sierra',           30.52),
-         (1, 'Finca El Encanto',        'Huila',              'Neiva',                   'Vereda San Luis',            31.09),
-         (1, 'Finca Campo Alegre',      'Boyacá',             'Tunja',                   'Vereda La Esperanza',        31.66),
-         (1, 'Hacienda Santa Helena',   'Antioquia',          'Rionegro',                'Vereda Galicia',             32.23),
-         (1, 'Finca El Refugio',        'Cundinamarca',       'Zipaquirá',               'Vereda Barandillas',         32.8),
-         (1, 'Hacienda Las Palmas',     'Atlántico',          'Barranquilla',            'Vereda La Playa',            33.37),
-         (1, 'Finca La Rivera',         'Bolívar',            'Cartagena',               'Vereda Pasacaballos',        33.94),
-         (1, 'Granja El Triunfo',       'Sucre',              'Sincelejo',               'Vereda La Arena',            34.51),
-         (1, 'Finca Los Laureles',      'Córdoba',            'Montería',                'Vereda El Sabanal',          35.08),
-         (1, 'Hacienda Villa Luz',      'La Guajira',         'Riohacha',                'Vereda Camarones',           35.65),
-         (1, 'Finca El Porvenir',       'Amazonas',           'Leticia',                 'Vereda Kilómetro 6',         36.22),
-         (1, 'Granja La Fortuna',       'Putumayo',           'Mocoa',                   'Vereda Rumiyaco',            36.79),
-         (1, 'Hacienda El Progreso',    'Caquetá',            'Florencia',               'Vereda El Caraño',           37.36),
-         (1, 'Finca Las Delicias',      'Guaviare',           'San José del Guaviare',   'Vereda El Retorno',          37.93),
-         (1, 'Lote La Esperanza'    ,   'Vaupés',             'Mitú',                    'Vereda Monforth',            38.5),
-         (1, 'Finca Nueva Vida',        'Guainía',            'Inírida',                 'Vereda Amanavén',            39.07),
-         (1, 'Hacienda El Descanso',    'Arauca',             'Arauca',                  'Vereda Todos Los Santos',    39.64),
-         (1, 'Granja El Horizonte',     'Casanare',           'Yopal',                   'Vereda Morichal',            40.21),
-         (1, 'Finca El Oasis',          'Vichada',            'Puerto Carreño',          'Vereda Aceitico',            40.78),
-         (1, 'Hacienda San Pedro',      'Chocó',              'Quibdó',                  'Vereda Tutunendo',           41.35),
-         (1, 'Finca Brisas del Campo',  'Santander',          'Socorro',                 'Vereda Palmas',              57.47),
-         (1, 'Hacienda La Cumbre',      'Boyacá',             'Duitama',                 'Vereda Higueras',            58.04),
-         (1, 'Granja El Manantial',     'Huila',              'Garzón',                  'Vereda Jagual',              58.61),
-         (1, 'Finca El Arrayán',        'Tolima',             'Honda',                   'Vereda Guayabal',            59.18),
-         (1, 'Hacienda El Rosal',       'Cundinamarca',       'Facatativá',              'Vereda Mancilla',            59.75),
-         (1, 'Granja El Nogal',         'Antioquia',          'La Ceja',                 'Vereda San José',            10.32),
-         (1, 'Finca El Cedro',          'Meta',               'Acacías',                 'Vereda Dinamarca',           10.89),
-         (1, 'Hacienda La Estrella',    'Caldas',             'Chinchiná',               'Vereda Guayabal',            11.46),
-         (1, 'Finca La Campiña',        'Risaralda',          'Dosquebradas',            'Vereda Frailes',             12.03),
-         (1, 'Granja Buenavista',       'Quindío',            'Montenegro',              'Vereda Pueblo Tapao',        12.6),
-         (1, 'Finca El Retiro',         'Valle del Cauca',    'Buga',                    'Vereda Chambimbal',          13.17),
-         (1, 'Hacienda El Vergel',      'Cauca',              'Santander de Quilichao',  'Vereda Dominguillo',         13.74),
-         (1, 'Granja El Mirador',       'Cesar',              'Aguachica',               'Vereda Buturama',            14.31),
-         (1, 'Finca La Esmeralda',      'Magdalena',          'Fundación',               'Vereda Santa Rosa',          14.88),
-         (1, 'Hacienda Los Pinos',      'Tolima',             'Chaparral',               'Vereda Tuluní',              15.45),
-         (1, 'Finca El Bosque Alto',    'Huila',              'La Plata',                'Vereda Panorama',            16.02),
-         (1, 'Granja El Diamante Azul', 'Boyacá',             'Sogamoso',                'Vereda Morcá',               16.59),
-         (1, 'Finca Santa Clara',       'Antioquia',          'Santa Fe de Antioquia',   'Vereda El Llano',            17.16),
-         (1, 'Hacienda El Jardín',      'Cundinamarca',       'Girardot',                'Vereda Acapulco',            17.73),
-         (1, 'Granja El Lago',          'Atlántico',          'Soledad',                 'Vereda Hipódromo',           18.3),
-         (1, 'Finca La Colina',         'Bolívar',            'Turbaco',                 'Vereda Cañaveral',           18.87),
-         (1, 'Hacienda El Puente',      'Sucre',              'Corozal',                 'Vereda Las Peñas',           19.44),
-         (1, 'Granja El Descanso Verde','Córdoba',            'Lorica',                  'Vereda La Doctrina',         20.01),
-         (1, 'Finca El Horizonte Azul', 'La Guajira',         'Maicao',                  'Vereda Paraguachón',         20.58),
-         (1, 'Hacienda La Palma Real',  'Amazonas',           'Leticia',                 'Vereda Tacana',              21.15),
-         (1, 'Finca Brisas del Campo',  'Santander',          'Socorro',                 'Vereda Palmas',              57.47),
-         (1, 'Hacienda La Cumbre',      'Boyacá',             'Duitama',                 'Vereda Higueras',            58.04),
-         (1, 'Granja El Manantial',     'Huila',              'Garzón',                  'Vereda Jagual',              58.61),
-         (1, 'Finca El Arrayán',        'Tolima',             'Honda',                   'Vereda Guayabal',            59.18),
-         (1, 'Hacienda El Rosal',       'Cundinamarca',       'Facatativá',              'Vereda Mancilla',            59.75),
-         (1, 'Granja El Nogal',         'Antioquia',          'La Ceja',                 'Vereda San José',            10.32),
-         (1, 'Finca El Cedro',          'Meta',               'Acacías',                 'Vereda Dinamarca',           10.89),
-         (1, 'Hacienda La Estrella',    'Caldas',             'Chinchiná',               'Vereda Guayabal',            11.46),
-         (1, 'Finca La Campiña',        'Risaralda',          'Dosquebradas',            'Vereda Frailes',             12.03),
-         (1, 'Granja Buenavista',       'Quindío',            'Montenegro',              'Vereda Pueblo Tapao',        12.6),
-         (1, 'Finca El Retiro',         'Valle del Cauca',    'Buga',                    'Vereda Chambimbal',          13.17),
-         (1, 'Hacienda El Vergel',      'Cauca',              'Santander de Quilichao',  'Vereda Dominguillo',         13.74),
-         (1, 'Granja El Mirador',       'Cesar',              'Aguachica',               'Vereda Buturama',            14.31),
-         (1, 'Finca La Esmeralda',      'Magdalena',          'Fundación',               'Vereda Santa Rosa',          14.88),
-         (1, 'Hacienda Los Pinos',      'Tolima',             'Chaparral',               'Vereda Tuluní',              15.45),
-         (1, 'Finca El Bosque Alto',    'Huila',              'La Plata',                'Vereda Panorama',            16.02),
-         (1, 'Granja El Diamante Azul', 'Boyacá',             'Sogamoso',                'Vereda Morcá',               16.59),
-         (1, 'Finca Santa Clara',       'Antioquia',          'Santa Fe de Antioquia',   'Vereda El Llano',            17.16),
-         (1, 'Hacienda El Jardín',      'Cundinamarca',       'Girardot',                'Vereda Acapulco',            17.73),
-         (1, 'Granja El Lago',          'Atlántico',          'Soledad',                 'Vereda Hipódromo',           18.3),
-         (1, 'Finca La Colina',         'Bolívar',            'Turbaco',                 'Vereda Cañaveral',           18.87),
-         (1, 'Hacienda El Puente',      'Sucre',              'Corozal',                 'Vereda Las Peñas',           19.44),
-         (1, 'Granja El Descanso Verde','Córdoba',            'Lorica',                  'Vereda La Doctrina',         20.01),
-         (1, 'Finca El Horizonte Azul', 'La Guajira',         'Maicao',                  'Vereda Paraguachón',         20.58),
-         (1, 'Hacienda La Palma Real',  'Amazonas',           'Leticia',                 'Vereda Tacana',              21.15),
-         (1, 'Finca El Sendero',        'Putumayo',           'Puerto Asís',             'Vereda La Carmelita',        21.72),
-         (1, 'Granja La Pradera',       'Caquetá',            'San Vicente del Caguán',  'Vereda Los Pozos',           22.29),
-         (1, 'Hacienda El Roble',       'Guaviare',           'Calamar',                 'Vereda La Libertad',         22.86),
-         (1, 'Finca El Silencio',       'Vichada',            'La Primavera',            'Vereda Santa Bárbara',       23.43),
-         (1, 'Granja El Porvenir Verde','Arauca',             'Saravena',                'Vereda El Troncal',          24.00)`
+    // Elimina registros semilla anteriores (nombre = ciudad, área = 10, vereda genérica)
+    // para poder reemplazarlos con los datos mejorados
+    `DELETE FROM predios_produccion
+     WHERE productor_id = 1
+       AND area_ha = 10.00
+       AND vereda_direccion = 'Vereda Principal'`,
+    INSERT_PREDIOS_MUNICIPIOS,
 ];
 
 const ensureSchema = (index = 0) => {
@@ -207,13 +198,6 @@ const ensureLotesPredioColumn = (done) => {
     );
 };
 
-connection.connect((err) => {
-    if (err) {
-        console.error('❌ Error DB:', err);
-    } else {
-        console.log('✅ DB production-service conectada');
-        ensureLotesPredioColumn(() => ensureSchema());
-    }
-});
+createConnection();
 
-module.exports = connection;
+module.exports = connectionProxy;
