@@ -13,8 +13,7 @@ const NAV_ITEMS = [
   {
     section: 'Gestión de Usuarios',
     items: [
-      { to: '/admin/usuarios',    label: 'Usuarios',       icon: <IconUsers />,   badge: null },
-      { to: '/admin/solicitudes', label: 'Solicitudes',    icon: <IconSolicitud />, badge: 'pendientes' },
+      { to: '/admin/usuarios', label: 'Usuarios y Solicitudes', icon: <IconUsers /> },
     ]
   },
   {
@@ -165,9 +164,6 @@ function IconDashboard() {
 }
 function IconUsers() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-}
-function IconSolicitud() {
-  return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
 }
 function IconPlaga() {
   return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
