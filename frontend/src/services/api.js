@@ -54,7 +54,12 @@ export const cultivosAPI = {
 }
 
 export const especiesAPI = {
-  getAll: (q) => axios.get(`${PRODUCTION_URL}/api/especies`, { headers: getHeaders(), params: q ? { q } : {} }),
+  getAll:       (q)        => axios.get(`${PRODUCTION_URL}/api/especies`, { headers: getHeaders(), params: q ? { q } : {} }),
+  getAdmin:     (params)   => axios.get(`${PRODUCTION_URL}/api/especies/admin`, { headers: getHeaders(), params }),
+  create:       (data)     => axios.post(`${PRODUCTION_URL}/api/especies`, data, { headers: getHeaders() }),
+  update:       (id, data) => axios.put(`${PRODUCTION_URL}/api/especies/${id}`, data, { headers: getHeaders() }),
+  changeEstado: (id, data) => axios.patch(`${PRODUCTION_URL}/api/especies/${id}/estado`, data, { headers: getHeaders() }),
+  delete:       (id)       => axios.delete(`${PRODUCTION_URL}/api/especies/${id}`, { headers: getHeaders() }),
 }
 
 export const inspeccionesAPI = {
@@ -65,6 +70,18 @@ export const inspeccionesAPI = {
 
 export const tecnicoAPI = {
   misInspecciones: (params) => axios.get(`${INSPECTION_URL}/api/inspections/tecnico/mis-inspecciones`, { headers: getHeaders(), params }),
+  detalleRealizacion: (id) => axios.get(`${INSPECTION_URL}/api/inspections/${id}/realizacion`, { headers: getHeaders() }),
+  evaluarLote: (id, loteId, data) => axios.put(`${INSPECTION_URL}/api/inspections/${id}/lotes/${loteId}/evaluar`, data, { headers: getHeaders() }),
   iniciar:         (id)     => axios.patch(`${INSPECTION_URL}/api/inspections/${id}/iniciar`, {}, { headers: getHeaders() }),
   completar:       (id, data) => axios.patch(`${INSPECTION_URL}/api/inspections/${id}/completar`, data, { headers: getHeaders() }),
+}
+
+export const plagasAPI = {
+  create:      (data)   => axios.post(`${INSPECTION_URL}/api/plagas`, data, { headers: getHeaders() }),
+  getAll:      (params) => axios.get(`${INSPECTION_URL}/api/plagas`, { headers: getHeaders(), params }),
+  getById:     (id)     => axios.get(`${INSPECTION_URL}/api/plagas/${id}`, { headers: getHeaders() }),
+  getEspecies: ()       => axios.get(`${INSPECTION_URL}/api/plagas/especies-disponibles`, { headers: getHeaders() }),
+  update:      (id, data) => axios.put(`${INSPECTION_URL}/api/plagas/${id}`, data, { headers: getHeaders() }),
+  changeEstado:(id, data) => axios.patch(`${INSPECTION_URL}/api/plagas/${id}/estado`, data, { headers: getHeaders() }),
+  delete:      (id)     => axios.delete(`${INSPECTION_URL}/api/plagas/${id}`, { headers: getHeaders() }),
 }

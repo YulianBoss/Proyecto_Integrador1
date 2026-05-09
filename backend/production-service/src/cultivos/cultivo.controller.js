@@ -46,9 +46,9 @@ const createCultivo = (req, res) => {
                         }
 
                         db.query(
-                            `INSERT INTO cultivos (lote_id, variedad, fecha_siembra, estado, fecha_registro)
-                            VALUES (?, ?, ?, 'activo', NOW())`,
-                            [lote_id, variedad || null, fecha_siembra],
+                            `INSERT INTO cultivos (lote_id, especie_id, variedad, fecha_siembra, estado, fecha_registro)
+                            VALUES (?, ?, ?, ?, 'activo', NOW())`,
+                            [lote_id, especie_id, variedad || null, fecha_siembra],
                             (err, result) => {
                                 if (err) { console.error(err); return res.status(500).json({ message: 'Error al registrar cultivo' }); }
 

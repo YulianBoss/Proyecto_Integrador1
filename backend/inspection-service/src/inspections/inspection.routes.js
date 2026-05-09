@@ -6,7 +6,9 @@ const {
     getMisSolicitudes,
     getDetalleSolicitud,
     getInspeccionesTecnico,
+    getDetalleRealizacion,
     iniciarInspeccion,
+    guardarEvaluacionLote,
     completarInspeccion,
 } = require('./inspection.controller');
 
@@ -18,7 +20,9 @@ router.get('/mis-solicitudes',  verifyToken, verifyProductor, getMisSolicitudes)
 
 // ── Rutas del Técnico ───────────────────────────────────────
 router.get('/tecnico/mis-inspecciones', verifyToken, verifyTecnico, getInspeccionesTecnico);
+router.get('/:id/realizacion',          verifyToken, verifyTecnico, getDetalleRealizacion);
 router.patch('/:id/iniciar',            verifyToken, verifyTecnico, iniciarInspeccion);
+router.put('/:id/lotes/:loteId/evaluar',verifyToken, verifyTecnico, guardarEvaluacionLote);
 router.patch('/:id/completar',          verifyToken, verifyTecnico, completarInspeccion);
 
 // ── Ruta compartida (detalle) ───────────────────────────────

@@ -1,7 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const controller = require('./production.controller');
-const { verifyToken, verifyProductor } = require('../middlewares/auth');
+const { verifyToken, verifyProductor, verifyTecnicoOrAdmin } = require('../middlewares/auth');
+
+router.get('/inspeccion/:id', verifyToken, verifyTecnicoOrAdmin, controller.getProductionForInspection);
+router.patch('/inspeccion/:id/ultima-inspeccion', verifyToken, verifyTecnicoOrAdmin, controller.registrarUltimaInspeccion);
 
 router.post('/', verifyToken, verifyProductor, controller.createProduction);
 router.get('/', verifyToken, verifyProductor, controller.getMyProductions);

@@ -492,10 +492,91 @@ const deleteProduction = async (req, res) => {
     }
 };
 
+const getProductionForInspection = async (req, res) => {
+    const lugarId = Number(req.params.id);
+
+    if (!Number.isInteger(lugarId) || lugarId <= 0) {
+        return res.status(400).json({ message: 'Id de lugar invalido' });
+    }
+
+    try {
+        const lugarRows = await queryAsync(
+            `SELECT id, nombre, departamento, municipio, vereda_direccion,
+                    fecha_ultima_inspeccion, fecha_proxima_inspeccion
+             FROM lugares_produccion
+             WHERE id = ?`,
+            [lugarId]
+        );
+
+        if (lugarRows.length === 0) {
+            return res.status(404).json({ message: 'Lugar de produccion no encontrado' });
+        }
+
+        const lotesRows = await queryAsync(
+            `SELECT l.id, l.codigo, l.estado,
+                    p.nombre_identificacion AS predio_nombre,
+                    c.id AS cultivo_id,
+                    c.especie_id AS especie_id,
+                    e.nombre AS especie_nombre,
+                    c.variedad AS cultivo_variedad,
+                    c.estado AS cultivo_estado
+             FROM lotes l
+             LEFT JOIN predios_produccion p ON p.id = l.predio_id
+             LEFT JOIN cultivos c ON c.lote_id = l.id AND c.estado = 'activo'
+             LEFT JOIN especies e ON e.id = c.especie_id
+             WHERE l.lugar_produccion_id = ?
+             ORDER BY l.codigo ASC, l.id ASC`,
+            [lugarId]
+        );
+
+        res.json({
+            ...lugarRows[0],
+            lotes: lotesRows,
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error al obtener datos del lugar para inspeccion' });
+    }
+};
+
+const registrarUltimaInspeccion = async (req, res) => {
+    const lugarId = Number(req.params.id);
+
+    if (!Number.isInteger(lugarId) || lugarId <= 0) {
+        return res.status(400).json({ message: 'Id de lugar invalido' });
+    }
+
+    try {
+        const lugarRows = await queryAsync(
+            'SELECT id FROM lugares_produccion WHERE id = ?',
+            [lugarId]
+        );
+
+        if (lugarRows.length === 0) {
+            return res.status(404).json({ message: 'Lugar de produccion no encontrado' });
+        }
+
+        await queryAsync(
+            `UPDATE lugares_produccion
+             SET fecha_ultima_inspeccion = NOW(),
+                 fecha_proxima_inspeccion = DATE_ADD(NOW(), INTERVAL 6 MONTH)
+             WHERE id = ?`,
+            [lugarId]
+        );
+
+        res.json({ message: 'Fecha de inspeccion actualizada', lugar_id: lugarId });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error al actualizar fecha de inspeccion' });
+    }
+};
+
 module.exports = {
     createProduction,
     getMyProductions,
     getProductionById,
     updateProduction,
     deleteProduction,
+    getProductionForInspection,
+    registrarUltimaInspeccion,
 };

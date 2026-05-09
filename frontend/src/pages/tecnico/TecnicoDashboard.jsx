@@ -1,10 +1,60 @@
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
+import { tecnicoAPI } from '../../services/api'
 
 export default function TecnicoDashboard() {
   const { user } = useAuth()
   const navigate = useNavigate()
   const displayName = user?.nombre || 'Técnico'
+  const [inspecciones, setInspecciones] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    const cargarInspecciones = async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const res = await tecnicoAPI.misInspecciones()
+        setInspecciones(Array.isArray(res.data) ? res.data : [])
+      } catch {
+        setError('No fue posible cargar las inspecciones próximas.')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    cargarInspecciones()
+  }, [])
+
+  const proximasInspecciones = useMemo(() => {
+    const hoy = new Date()
+    hoy.setHours(0, 0, 0, 0)
+
+    return inspecciones
+      .filter((insp) => ['pendiente', 'en_proceso'].includes(insp.estado))
+      .map((insp) => {
+        const baseDate = insp.fecha_programada || insp.fecha_solicitud
+        const fecha = baseDate ? new Date(baseDate) : null
+        return { ...insp, _fechaOrden: fecha && !Number.isNaN(fecha.getTime()) ? fecha : null }
+      })
+      .sort((a, b) => {
+        if (!a._fechaOrden && !b._fechaOrden) return 0
+        if (!a._fechaOrden) return 1
+        if (!b._fechaOrden) return -1
+        return a._fechaOrden - b._fechaOrden
+      })
+      .filter((insp) => !insp._fechaOrden || insp._fechaOrden >= hoy)
+      .slice(0, 5)
+  }, [inspecciones])
+
+  const formatearFecha = (fecha) => {
+    if (!fecha) return 'Sin fecha programada'
+    const d = new Date(fecha)
+    if (Number.isNaN(d.getTime())) return 'Sin fecha programada'
+    return d.toLocaleDateString('es-CO', { day: '2-digit', month: 'long', year: 'numeric' })
+  }
 
   return (
     <section className="tc-dash">
@@ -27,32 +77,68 @@ export default function TecnicoDashboard() {
           onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/tecnico/inspecciones') } }}
         >
           <div className="tc-card__body">
-            <h3>Mis Inspecciones</h3>
-            <p>Consulta y realiza las inspecciones fitosanitarias pendientes que tienes asignadas</p>
+            <h3>Consultar inspecciones</h3>
+            <p>Revisa todas tus inspecciones asignadas y su estado actual.</p>
           </div>
           <div className="tc-card__icon" aria-hidden="true">
             <IcoClipboard />
           </div>
         </article>
 
-        <article className="tc-card tc-card--info">
+        <article
+          className="tc-card tc-card--secondary"
+          onClick={() => navigate('/tecnico/inspecciones')}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate('/tecnico/inspecciones') } }}
+        >
           <div className="tc-card__body">
-            <h3>¿Cómo funciona?</h3>
-            <ol className="tc-steps">
-              <li><span className="tc-step__num">1</span> Ve a <strong>Mis Inspecciones</strong> para ver las pendientes.</li>
-              <li><span className="tc-step__num">2</span> Inicia la inspección cuando llegues al lugar.</li>
-              <li><span className="tc-step__num">3</span> Completa el formulario con observaciones y concepto técnico.</li>
-            </ol>
+            <h3>Realizar inspecciones</h3>
+            <p>Inicia y completa tus inspecciones pendientes con observaciones y concepto técnico.</p>
           </div>
           <div className="tc-card__icon" aria-hidden="true">
-            <IcoInfo />
+            <IcoPlay />
           </div>
         </article>
       </div>
 
+      <section className="tc-notis" aria-live="polite">
+        <header className="tc-notis__head">
+          <h3>Notificaciones de inspecciones próximas</h3>
+          <button type="button" onClick={() => navigate('/tecnico/inspecciones')}>Ver todas</button>
+        </header>
+
+        {loading ? (
+          <p className="tc-notis__empty">Cargando inspecciones próximas...</p>
+        ) : error ? (
+          <p className="tc-notis__error">{error}</p>
+        ) : proximasInspecciones.length === 0 ? (
+          <p className="tc-notis__empty">No tienes inspecciones próximas por realizar.</p>
+        ) : (
+          <div className="tc-notis__list">
+            {proximasInspecciones.map((insp) => (
+              <article key={insp.id} className="tc-noti">
+                <p className="tc-noti__title">
+                  Inspección a realizar el día: <strong>{formatearFecha(insp.fecha_programada || insp.fecha_solicitud)}</strong>
+                </p>
+                <p className="tc-noti__meta">
+                  Predio: <strong>{insp.predio_nombre || 'No registrado'}</strong>
+                </p>
+                <p className="tc-noti__meta">
+                  Lugar de producción: <strong>{insp.lugar_nombre || `Lugar #${insp.lugar_produccion_id}`}</strong>
+                </p>
+                <p className="tc-noti__meta">
+                  Lote: <strong>{insp.lote_codigo || `Lote #${insp.lote_id}`}</strong>
+                </p>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
       <style>{`
         .tc-dash {
-          max-width: 860px;
+          max-width: 960px;
         }
         .tc-dash__hero {
           position: relative;
@@ -115,12 +201,10 @@ export default function TecnicoDashboard() {
           background: linear-gradient(135deg, #eef0fb 0%, #dde2f7 100%);
           border-color: #c5cdf0;
         }
-        .tc-card--info {
-          background: #fff;
-          border-color: #e5e9f0;
-          cursor: default;
+        .tc-card--secondary {
+          background: linear-gradient(135deg, #fff7eb 0%, #ffe6c2 100%);
+          border-color: #ffd394;
         }
-        .tc-card--info:hover { transform: none; box-shadow: none; }
 
         .tc-card__body { flex: 1; min-width: 0; }
         .tc-card__body h3 { margin: 0 0 0.4rem; font-size: 1.05rem; color: #1e2a4a; font-weight: 700; }
@@ -133,17 +217,68 @@ export default function TecnicoDashboard() {
           display: flex; align-items: center; justify-content: center;
           color: #fff;
         }
-        .tc-card--info .tc-card__icon { background: #f0f4ff; color: #3b4fa8; }
+        .tc-card--secondary .tc-card__icon { background: #b45309; color: #fff; }
         .tc-card__icon svg { width: 22px; height: 22px; }
 
-        .tc-steps { margin: 0.5rem 0 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.55rem; }
-        .tc-steps li { display: flex; align-items: flex-start; gap: 0.6rem; font-size: 0.84rem; color: #374151; }
-        .tc-step__num {
-          width: 20px; height: 20px; border-radius: 50%;
-          background: #3b4fa8; color: #fff;
-          font-size: 0.65rem; font-weight: 700;
-          display: flex; align-items: center; justify-content: center;
-          flex-shrink: 0; margin-top: 1px;
+        .tc-notis {
+          margin-top: 1.5rem;
+          background: #fff;
+          border-radius: 14px;
+          border: 1.5px solid #e5e9f0;
+          padding: 1.1rem;
+        }
+        .tc-notis__head {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 0.75rem;
+          margin-bottom: 0.9rem;
+        }
+        .tc-notis__head h3 {
+          margin: 0;
+          color: #1e2a4a;
+          font-size: 1rem;
+        }
+        .tc-notis__head button {
+          border: 1px solid #c5cdf0;
+          background: #f5f7ff;
+          color: #3b4fa8;
+          border-radius: 8px;
+          padding: 0.38rem 0.75rem;
+          cursor: pointer;
+          font-size: 0.78rem;
+          font-weight: 600;
+        }
+        .tc-notis__list {
+          display: grid;
+          gap: 0.7rem;
+        }
+        .tc-noti {
+          border: 1px solid #e6ecfa;
+          border-left: 5px solid #3b4fa8;
+          border-radius: 10px;
+          padding: 0.7rem 0.9rem;
+          background: #fbfcff;
+        }
+        .tc-noti__title {
+          margin: 0 0 0.35rem;
+          color: #1f2937;
+          font-size: 0.84rem;
+        }
+        .tc-noti__meta {
+          margin: 0.15rem 0;
+          color: #4b5563;
+          font-size: 0.8rem;
+        }
+        .tc-notis__empty {
+          margin: 0;
+          color: #6b7280;
+          font-size: 0.84rem;
+        }
+        .tc-notis__error {
+          margin: 0;
+          color: #b91c1c;
+          font-size: 0.84rem;
         }
 
         @keyframes tcFadeUp {
@@ -159,6 +294,6 @@ const S = { fill:'none', stroke:'currentColor', strokeWidth:'1.8', strokeLinecap
 function IcoClipboard() {
   return <svg viewBox="0 0 24 24" {...S}><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
 }
-function IcoInfo() {
-  return <svg viewBox="0 0 24 24" {...S}><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+function IcoPlay() {
+  return <svg viewBox="0 0 24 24" {...S}><polygon points="5 3 19 12 5 21 5 3"/></svg>
 }

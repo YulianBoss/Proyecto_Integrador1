@@ -26,4 +26,11 @@ const verifyTecnico = (req, res, next) => {
     next();
 };
 
-module.exports = { verifyToken, verifyProductor, verifyTecnico };
+const verifyAdmin = (req, res, next) => {
+    if (req.user.rol !== 'admin') {
+        return res.status(403).json({ message: 'Acceso denegado: solo administradores pueden acceder a este recurso' });
+    }
+    next();
+};
+
+module.exports = { verifyToken, verifyProductor, verifyTecnico, verifyAdmin };

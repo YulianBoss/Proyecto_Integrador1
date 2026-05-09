@@ -21,7 +21,7 @@ function createConnection() {
             return;
         }
         console.log('✅ DB production-service conectada');
-        ensureLotesPredioColumn(() => ensureSchema());
+        ensureLotesPredioColumn(() => ensureCultivosEspecieColumn(() => ensureSchema()));
     });
 
     connection.on('error', (err) => {
@@ -106,12 +106,106 @@ const INSERT_PREDIOS_MUNICIPIOS = `INSERT IGNORE INTO predios_produccion
      VALUES
      ${_predioRows.join(',\n     ')}`;
 
+const ESPECIES_CATALOGO = [
+    { id: 1, nombre: 'Tomate', nombre_cientifico: 'Solanum lycopersicum', descripcion: 'Fruto rojo de amplio consumo, sensible a hongos y plagas.' },
+    { id: 2, nombre: 'Papa', nombre_cientifico: 'Solanum tuberosum', descripcion: 'Tuberculo andino, cultivo principal en zonas de altura.' },
+    { id: 3, nombre: 'Pimenton', nombre_cientifico: 'Capsicum annuum', descripcion: 'Fruto del genero Capsicum, exportacion frecuente.' },
+    { id: 4, nombre: 'Cebolla cabezona', nombre_cientifico: 'Allium cepa', descripcion: 'Bulbo de amplio uso culinario y exportacion.' },
+    { id: 5, nombre: 'Cebolla larga', nombre_cientifico: 'Allium fistulosum', descripcion: 'Variedad de cebolla de tallo largo, comun en Colombia.' },
+    { id: 6, nombre: 'Zanahoria', nombre_cientifico: 'Daucus carota', descripcion: 'Raiz comestible naranja, alto contenido en betacaroteno.' },
+    { id: 7, nombre: 'Lechuga', nombre_cientifico: 'Lactuca sativa', descripcion: 'Hortaliza de hoja, produccion intensiva bajo invernadero.' },
+    { id: 8, nombre: 'Espinaca', nombre_cientifico: 'Spinacia oleracea', descripcion: 'Planta de hoja verde rica en hierro, ciclo corto.' },
+    { id: 9, nombre: 'Repollo', nombre_cientifico: 'Brassica oleracea capitata', descripcion: 'Hortaliza de cabeza compacta, resistente al frio.' },
+    { id: 10, nombre: 'Brocoli', nombre_cientifico: 'Brassica oleracea italica', descripcion: 'Vegetal crucifero de alto valor nutricional.' },
+    { id: 11, nombre: 'Coliflor', nombre_cientifico: 'Brassica oleracea botrytis', descripcion: 'Vegetal crucifero de cabeza blanca compacta.' },
+    { id: 12, nombre: 'Acelga', nombre_cientifico: 'Beta vulgaris var. cicla', descripcion: 'Planta de hojas grandes, tolerante a temperaturas variadas.' },
+    { id: 13, nombre: 'Apio', nombre_cientifico: 'Apium graveolens', descripcion: 'Planta aromatica de tallo firme, uso culinario y medicinal.' },
+    { id: 14, nombre: 'Rabano', nombre_cientifico: 'Raphanus sativus', descripcion: 'Raiz de ciclo muy corto, cultivo rapido.' },
+    { id: 15, nombre: 'Habichuela', nombre_cientifico: 'Phaseolus vulgaris', descripcion: 'Leguminosa de vaina verde, produccion en climas medios.' },
+    { id: 16, nombre: 'Pepino cohombro', nombre_cientifico: 'Cucumis sativus', descripcion: 'Fruto alargado de alta demanda en mercados frescos.' },
+    { id: 17, nombre: 'Calabaza', nombre_cientifico: 'Cucurbita maxima', descripcion: 'Fruto grande, pulpa naranja, versatil en gastronomia.' },
+    { id: 18, nombre: 'Ahuyama', nombre_cientifico: 'Cucurbita moschata', descripcion: 'Variedad de zapallo muy comun en Colombia.' },
+    { id: 19, nombre: 'Berenjena', nombre_cientifico: 'Solanum melongena', descripcion: 'Fruto de piel morada, muy usada en cocina mediterranea.' },
+    { id: 20, nombre: 'Arveja', nombre_cientifico: 'Pisum sativum', descripcion: 'Leguminosa de vaina, rica en proteinas vegetales.' },
+    { id: 21, nombre: 'Maiz', nombre_cientifico: 'Zea mays', descripcion: 'Cereal base de la alimentacion latinoamericana.' },
+    { id: 22, nombre: 'Frijol', nombre_cientifico: 'Phaseolus vulgaris', descripcion: 'Leguminosa de grano, cultivo tradicional colombiano.' },
+    { id: 23, nombre: 'Lenteja', nombre_cientifico: 'Lens culinaris', descripcion: 'Leguminosa de grano pequeno, alto valor proteico.' },
+    { id: 24, nombre: 'Garbanzo', nombre_cientifico: 'Cicer arietinum', descripcion: 'Leguminosa de grano redondo, uso culinario amplio.' },
+    { id: 25, nombre: 'Sorgo', nombre_cientifico: 'Sorghum bicolor', descripcion: 'Cereal resistente a sequia, uso forrajero y alimentario.' },
+    { id: 26, nombre: 'Trigo', nombre_cientifico: 'Triticum aestivum', descripcion: 'Cereal base para harinas, cultivos en zonas frias.' },
+    { id: 27, nombre: 'Arroz', nombre_cientifico: 'Oryza sativa', descripcion: 'Cereal de mayor produccion mundial, requiere humedad.' },
+    { id: 28, nombre: 'Avena', nombre_cientifico: 'Avena sativa', descripcion: 'Cereal de clima frio, alto contenido en fibra.' },
+    { id: 29, nombre: 'Cebada', nombre_cientifico: 'Hordeum vulgare', descripcion: 'Cereal usado en alimentacion animal e industria cervecera.' },
+    { id: 30, nombre: 'Banano', nombre_cientifico: 'Musa acuminata', descripcion: 'Fruta tropical de exportacion masiva desde Colombia.' },
+    { id: 31, nombre: 'Platano', nombre_cientifico: 'Musa paradisiaca', descripcion: 'Fruta basica en la dieta colombiana, varios climas.' },
+    { id: 32, nombre: 'Mango', nombre_cientifico: 'Mangifera indica', descripcion: 'Fruta tropical dulce, alta demanda internacional.' },
+    { id: 33, nombre: 'Papaya', nombre_cientifico: 'Carica papaya', descripcion: 'Fruta tropical de ciclo corto, exportacion frecuente.' },
+    { id: 34, nombre: 'Pina', nombre_cientifico: 'Ananas comosus', descripcion: 'Fruta tropical de exportacion, requiere clima calido.' },
+    { id: 35, nombre: 'Maracuya', nombre_cientifico: 'Passiflora edulis', descripcion: 'Fruta tropical acida, gran demanda en jugos y exportacion.' },
+    { id: 36, nombre: 'Lulo', nombre_cientifico: 'Solanum quitoense', descripcion: 'Fruta andina exclusiva de Colombia y Ecuador.' },
+    { id: 37, nombre: 'Feijoa', nombre_cientifico: 'Acca sellowiana', descripcion: 'Fruta aromatica de clima frio moderado.' },
+    { id: 38, nombre: 'Guanabana', nombre_cientifico: 'Annona muricata', descripcion: 'Fruta tropical de pulpa blanca y sabor acido-dulce.' },
+    { id: 39, nombre: 'Curuba', nombre_cientifico: 'Passiflora tarminiana', descripcion: 'Fruta andina colombiana, uso en jugos y reposteria.' },
+    { id: 40, nombre: 'Tomate de arbol', nombre_cientifico: 'Solanum betaceum', descripcion: 'Fruta andina de piel roja o amarilla, uso en jugos.' },
+    { id: 41, nombre: 'Aguacate', nombre_cientifico: 'Persea americana', descripcion: 'Fruta de alto valor graso, exportacion en crecimiento.' },
+    { id: 42, nombre: 'Limon Tahiti', nombre_cientifico: 'Citrus latifolia', descripcion: 'Citrico de alta demanda internacional, clima calido.' },
+    { id: 43, nombre: 'Naranja', nombre_cientifico: 'Citrus sinensis', descripcion: 'Citrico de mayor consumo mundial.' },
+    { id: 44, nombre: 'Mandarina', nombre_cientifico: 'Citrus reticulata', descripcion: 'Citrico de facil pelado, alta demanda en mercados frescos.' },
+    { id: 45, nombre: 'Fresa', nombre_cientifico: 'Fragaria x ananassa', descripcion: 'Fruta de clima frio, produccion bajo invernadero en Colombia.' },
+    { id: 46, nombre: 'Mora', nombre_cientifico: 'Rubus glaucus', descripcion: 'Fruta andina colombiana, exportacion en crecimiento.' },
+    { id: 47, nombre: 'Uva', nombre_cientifico: 'Vitis vinifera', descripcion: 'Fruta de vid, produccion limitada en zonas calidas de Colombia.' },
+    { id: 48, nombre: 'Melon', nombre_cientifico: 'Cucumis melo', descripcion: 'Fruta de clima calido, exportacion a mercados europeos.' },
+    { id: 49, nombre: 'Sandia', nombre_cientifico: 'Citrullus lanatus', descripcion: 'Fruta de gran tamano, clima calido, alta demanda en verano.' },
+    { id: 50, nombre: 'Clavel', nombre_cientifico: 'Dianthus caryophyllus', descripcion: 'Flor de exportacion principal de Colombia.' },
+    { id: 51, nombre: 'Rosa', nombre_cientifico: 'Rosa hybrida', descripcion: 'Flor de mayor exportacion colombiana, diversas variedades.' },
+    { id: 52, nombre: 'Crisantemo', nombre_cientifico: 'Chrysanthemum morifolium', descripcion: 'Flor de exportacion de alto volumen.' },
+    { id: 53, nombre: 'Lirio', nombre_cientifico: 'Lilium sp.', descripcion: 'Flor ornamental de exportacion, requiere clima frio.' },
+    { id: 54, nombre: 'Alstroemeria', nombre_cientifico: 'Alstroemeria sp.', descripcion: 'Flor de larga vida util, exportacion frecuente.' },
+    { id: 55, nombre: 'Cafe', nombre_cientifico: 'Coffea arabica', descripcion: 'Principal producto de exportacion historica de Colombia.' },
+    { id: 56, nombre: 'Cacao', nombre_cientifico: 'Theobroma cacao', descripcion: 'Materia prima del chocolate, exportacion en crecimiento.' },
+    { id: 57, nombre: 'Cana de azucar', nombre_cientifico: 'Saccharum officinarum', descripcion: 'Cultivo industrial, produccion de azucar y etanol.' },
+    { id: 58, nombre: 'Palma africana', nombre_cientifico: 'Elaeis guineensis', descripcion: 'Cultivo de aceite vegetal, extensas plantaciones en Colombia.' },
+    { id: 59, nombre: 'Yuca', nombre_cientifico: 'Manihot esculenta', descripcion: 'Tuberculo resistente, uso alimentario e industrial.' },
+    { id: 60, nombre: 'Name', nombre_cientifico: 'Dioscorea alata', descripcion: 'Tuberculo tropical, consumo local y exportacion.' },
+    { id: 61, nombre: 'Platano topocho', nombre_cientifico: 'Musa balbisiana', descripcion: 'Variedad de platano resistente a sequia.' },
+    { id: 62, nombre: 'Ajonjoli', nombre_cientifico: 'Sesamum indicum', descripcion: 'Semilla oleaginosa, exportacion en aumento.' },
+    { id: 63, nombre: 'Girasol', nombre_cientifico: 'Helianthus annuus', descripcion: 'Planta oleaginosa, produccion de aceite y ornamental.' },
+    { id: 64, nombre: 'Soya', nombre_cientifico: 'Glycine max', descripcion: 'Leguminosa oleaginosa de alta demanda industrial.' },
+    { id: 65, nombre: 'Algodon', nombre_cientifico: 'Gossypium hirsutum', descripcion: 'Fibra natural de importancia industrial.' },
+    { id: 66, nombre: 'Tabaco', nombre_cientifico: 'Nicotiana tabacum', descripcion: 'Cultivo comercial regulado, exportacion limitada.' },
+    { id: 67, nombre: 'Ajo', nombre_cientifico: 'Allium sativum', descripcion: 'Bulbo aromatico de uso culinario y medicinal.' },
+    { id: 68, nombre: 'Jengibre', nombre_cientifico: 'Zingiber officinale', descripcion: 'Raiz aromatica medicinal, exportacion en crecimiento.' },
+    { id: 69, nombre: 'Curcuma', nombre_cientifico: 'Curcuma longa', descripcion: 'Especia de raiz amarilla, alto valor medicinal.' },
+    { id: 70, nombre: 'Hierbabuena', nombre_cientifico: 'Mentha spicata', descripcion: 'Planta aromatica de uso culinario y medicinal.' },
+    { id: 71, nombre: 'Cilantro', nombre_cientifico: 'Coriandrum sativum', descripcion: 'Hierba aromatica de ciclo corto, alta rotacion.' },
+    { id: 72, nombre: 'Perejil', nombre_cientifico: 'Petroselinum crispum', descripcion: 'Hierba aromatica de uso culinario frecuente.' },
+    { id: 73, nombre: 'Albahaca', nombre_cientifico: 'Ocimum basilicum', descripcion: 'Planta aromatica de exportacion y uso culinario.' },
+];
+
+const INSERT_ESPECIES_CATALOGO = `INSERT IGNORE INTO especies
+     (id, nombre, nombre_cientifico, descripcion, estado)
+     VALUES
+     ${ESPECIES_CATALOGO.map((especie) => {
+         const esc = (value) => String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+         return `(${especie.id}, '${esc(especie.nombre)}', '${esc(especie.nombre_cientifico)}', '${esc(especie.descripcion)}', 'activo')`;
+     }).join(',\n     ')}`;
+
 const schemaStatements = [
     `ALTER TABLE lugares_produccion
      MODIFY COLUMN estado VARCHAR(40) NOT NULL DEFAULT 'activo'`,
     `UPDATE lugares_produccion
      SET estado = 'activo'
      WHERE estado IN ('pendiente_validacion', 'rechazado')`,
+    `CREATE TABLE IF NOT EXISTS especies (
+        id INT PRIMARY KEY,
+        nombre VARCHAR(180) NOT NULL,
+        nombre_cientifico VARCHAR(220) NOT NULL,
+        descripcion TEXT NULL,
+        estado VARCHAR(40) NOT NULL DEFAULT 'activo',
+        UNIQUE KEY uq_especies_nombre (nombre),
+        UNIQUE KEY uq_especies_nombre_cientifico (nombre_cientifico)
+    )`,
+    INSERT_ESPECIES_CATALOGO,
     `CREATE TABLE IF NOT EXISTS predios_produccion (
         id INT AUTO_INCREMENT PRIMARY KEY,
         productor_id INT NOT NULL,
@@ -199,6 +293,40 @@ const ensureLotesPredioColumn = (done) => {
                 (alterErr) => {
                     if (alterErr) {
                         console.error('❌ Error agregando columna predio_id en lotes:', alterErr.message);
+                    }
+                    done();
+                }
+            );
+        }
+    );
+};
+
+const ensureCultivosEspecieColumn = (done) => {
+    connection.query(
+        `SELECT COUNT(*) AS total
+         FROM information_schema.COLUMNS
+         WHERE TABLE_SCHEMA = DATABASE()
+           AND TABLE_NAME = 'cultivos'
+           AND COLUMN_NAME = 'especie_id'`,
+        (err, rows) => {
+            if (err) {
+                console.error('❌ Error validando columna especie_id en cultivos:', err.message);
+                done();
+                return;
+            }
+
+            const exists = Number(rows?.[0]?.total || 0) > 0;
+            if (exists) {
+                done();
+                return;
+            }
+
+            connection.query(
+                `ALTER TABLE cultivos
+                 ADD COLUMN especie_id INT NULL AFTER lote_id`,
+                (alterErr) => {
+                    if (alterErr) {
+                        console.error('❌ Error agregando columna especie_id en cultivos:', alterErr.message);
                     }
                     done();
                 }

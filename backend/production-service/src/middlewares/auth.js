@@ -21,4 +21,18 @@ const verifyProductor = (req, res, next) => {
     next();
 };
 
-module.exports = { verifyToken, verifyProductor };
+const verifyTecnicoOrAdmin = (req, res, next) => {
+    if (!['tecnico', 'admin'].includes(req.user.rol)) {
+        return res.status(403).json({ message: 'Acceso denegado: solo tecnicos o administradores' });
+    }
+    next();
+};
+
+const verifyAdmin = (req, res, next) => {
+    if (req.user.rol !== 'admin') {
+        return res.status(403).json({ message: 'Acceso denegado: solo administradores' });
+    }
+    next();
+};
+
+module.exports = { verifyToken, verifyProductor, verifyTecnicoOrAdmin, verifyAdmin };
