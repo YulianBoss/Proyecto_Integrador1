@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const AUTH_URL       = 'http://localhost:3001'
-const PRODUCTION_URL = 'http://localhost:58761'
+const PRODUCTION_URL = 'http://localhost:3002'
 const INSPECTION_URL = 'http://localhost:3003'
 
 const getHeaders = () => {

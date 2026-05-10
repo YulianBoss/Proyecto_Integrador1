@@ -18,6 +18,17 @@ const ensureTable = (sql, done) => {
     });
 };
 
+const ensureStatement = (sql, successMessage, done) => {
+    connection.query(sql, (err) => {
+        if (err) {
+            console.error('❌ Error ejecutando migracion:', err.message);
+        } else if (successMessage) {
+            console.log(successMessage);
+        }
+        done();
+    });
+};
+
 const runSequential = (tasks, index = 0) => {
     if (index >= tasks.length) return;
     tasks[index](() => runSequential(tasks, index + 1));
@@ -143,16 +154,37 @@ connection.connect((err) => {
             )`,
             next
         ),
+        (next) => ensureColumnInTable('plagas', 'especie_id', 'INT NULL', 'nivel_riesgo', next),
         (next) => ensureTable(
-            `INSERT IGNORE INTO plagas (nombre_comun, nombre_cientifico, descripcion, nivel_riesgo, estado)
+            `INSERT IGNORE INTO plagas (nombre_comun, nombre_cientifico, descripcion, nivel_riesgo, especie_id, estado)
              VALUES
-             ('Mosca blanca', 'Bemisia tabaci', 'Plaga chupadora que reduce vigor del cultivo', 'medio', 'activo'),
-             ('Trips', 'Frankliniella occidentalis', 'Plaga que causa danos en hojas y flores', 'medio', 'activo'),
-             ('Roya del cafe', 'Hemileia vastatrix', 'Enfermedad fungica frecuente en cafe', 'alto', 'activo'),
-             ('Antracnosis', 'Colletotrichum gloeosporioides', 'Enfermedad fungica con lesiones y pudricion', 'alto', 'activo')`,
+             ('Mosca blanca', 'Bemisia tabaci', 'Plaga chupadora que reduce vigor del cultivo', 'medio', 1, 'activo'),
+             ('Trips', 'Frankliniella occidentalis', 'Plaga que causa danos en hojas y flores', 'medio', 3, 'activo'),
+             ('Roya del cafe', 'Hemileia vastatrix', 'Enfermedad fungica frecuente en cafe', 'alto', 55, 'activo'),
+             ('Antracnosis', 'Colletotrichum gloeosporioides', 'Enfermedad fungica con lesiones y pudricion', 'alto', 32, 'activo')`,
             next
         ),
-        (next) => ensureColumnInTable('plagas', 'especie_id', 'INT NULL', 'nivel_riesgo', next),
+        (next) => ensureStatement(
+            `UPDATE plagas
+             SET especie_id = CASE
+                WHEN LOWER(nombre_cientifico) = LOWER('Bemisia tabaci') THEN 1
+                WHEN LOWER(nombre_cientifico) = LOWER('Frankliniella occidentalis') THEN 3
+                WHEN LOWER(nombre_cientifico) = LOWER('Hemileia vastatrix') THEN 55
+                WHEN LOWER(nombre_cientifico) = LOWER('Colletotrichum gloeosporioides') THEN 32
+                ELSE especie_id
+             END
+             WHERE especie_id IS NULL`,
+            '✅ Plagas semilla asociadas con especie_id',
+            next
+        ),
+        (next) => ensureStatement(
+            `INSERT IGNORE INTO plaga_cultivos (plaga_id, cultivo_id, cultivo_nombre)
+             SELECT id, especie_id, CONCAT('Cultivo #', especie_id)
+             FROM plagas
+             WHERE especie_id IS NOT NULL`,
+            '✅ Relaciones plaga-cultivo sincronizadas desde especie_id',
+            next
+        ),
         (next) => ensureColumnInTable('inspeccion_lote_plagas', 'plaga_id', 'INT NULL', 'inspeccion_lote_id', next),
         () => console.log('✅ Esquema inspection-service verificado'),
     ]);

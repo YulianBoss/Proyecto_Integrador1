@@ -1,0 +1,43 @@
+.plagas-nav-grid {
+  margin-top: 0.8rem;
+}
+
+.plagas-nav-card {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.plagas-nav-card--active {
+  border-color: #7aa7d9;
+  box-shadow: 0 12px 24px rgba(43, 108, 176, 0.16);
+}
+
+.plagas-active-chip {
+  margin-top: 0.6rem;
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #1d4f8d;
+  background: #e5effa;
+  border: 1px solid #c6dbf2;
+  border-radius: 999px;
+  padding: 0.2rem 0.5rem;
+}
+
+.plagas-panel {
+  border: 1px solid #dce3ec;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 0.8rem;
+  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.07);
+}
+
+.plagas-panel__head h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #1a3147;
+}
+
+.plagas-card__panel {
+  margin-top: 0.65rem;
+}

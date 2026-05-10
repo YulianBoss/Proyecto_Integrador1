@@ -1,5 +1,3 @@
-version: '3.9'
-
 services:
 
   # ── Auth Service ─────────────────────────────────────────────
@@ -30,7 +28,7 @@ services:
     container_name: sigfito-production
     restart: unless-stopped
     ports:
-      - "58761:58761"
+      - "3002:58761"
     environment:
       PORT: 58761
       JWT_SECRET: ${JWT_SECRET}

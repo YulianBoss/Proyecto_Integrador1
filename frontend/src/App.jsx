@@ -6,6 +6,8 @@ import AdminLayout from './layouts/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsuarios from './pages/admin/AdminUsuarios'
 import AdminPlagas from './pages/admin/AdminPlagas'
+import AdminPlagasCrear from './pages/admin/AdminPlagasCrear'
+import AdminPlagasEditar from './pages/admin/AdminPlagasEditar'
 import AdminCultivosMock from './pages/admin/AdminCultivosMock'
 import ProductorLayout from './layouts/ProductorLayout'
 import ProductorDashboard from './pages/productor/ProductorDashboard'
@@ -64,6 +66,8 @@ export default function App() {
           <Route path="usuarios"     element={<AdminUsuarios />} />
           <Route path="solicitudes"  element={<Navigate to="/admin/usuarios" replace />} />
           <Route path="plagas"       element={<AdminPlagas />} />
+          <Route path="plagas/crear" element={<AdminPlagasCrear />} />
+          <Route path="plagas/editar" element={<AdminPlagasEditar />} />
           <Route path="cultivos"     element={<AdminCultivosMock />} />
           <Route path="inspecciones" element={<Placeholder titulo="Supervision de Inspecciones" />} />
           <Route path="reportes"     element={<Placeholder titulo="Reportes Globales" />} />

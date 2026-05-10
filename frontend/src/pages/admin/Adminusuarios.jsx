@@ -74,6 +74,7 @@ export default function AdminUsuarios() {
 
   // Form editar
   const [formEditar, setFormEditar] = useState({ nombre_completo: '', correo: '', telefono: '', rol: '', estado: '' })
+  const [modoEdicion, setModoEdicion] = useState(false)
 
   const showToast = (msg, tipo = 'ok') => {
     setToast({ msg, tipo })
@@ -125,7 +126,17 @@ export default function AdminUsuarios() {
       rol: u.rol,
       estado: u.estado
     })
+    setModoEdicion(false)
     setModalEditar(u)
+  }
+
+  const activarEdicion = () => {
+    setModoEdicion(true)
+  }
+
+  const cancelarEdicion = () => {
+    setModoEdicion(false)
+    abrirEditar(modalEditar)
   }
 
   const guardarEditar = async () => {
@@ -313,12 +324,9 @@ export default function AdminUsuarios() {
                 <thead>
                   <tr>
                     <th>Usuario</th>
-                    <th>Correo</th>
-                    <th>Rol</th>
-                    <th>Identificación</th>
-                    <th>Tarjeta Profesional</th>
+                    <th>Número de Identificación</th>
                     <th>Teléfono</th>
-                    <th>Estado</th>
+                    <th>Correo</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -331,20 +339,13 @@ export default function AdminUsuarios() {
                           <strong>{u.nombre_completo}</strong>
                         </div>
                       </td>
+                      <td className="gu-td-muted">{u.num_identificacion || '—'}</td>
+                      <td className="gu-td-muted">{u.telefono || '—'}</td>
                       <td className="gu-td-muted">{u.correo}</td>
                       <td>
-                        <span className={`gu-rol-tag ${ROL_CLASS[u.rol] || ''}`}>
-                          {ROL_LABELS[u.rol] || u.rol}
-                        </span>
-                      </td>
-                      <td className="gu-td-muted">{u.num_identificacion || '—'}</td>
-                      <td className="gu-td-muted">{u.rol === 'tecnico' ? (u.tarjeta_profesional || '—') : '—'}</td>
-                      <td className="gu-td-muted">{u.telefono || '—'}</td>
-                      <td><Badge estado={u.estado} /></td>
-                      <td>
                         <div className="gu-actions">
-                          <button className="gu-btn gu-btn--outline gu-btn--sm" onClick={() => abrirEditar(u)} title="Editar">
-                            <IconEdit /> Editar
+                          <button className="gu-btn gu-btn--outline gu-btn--sm" onClick={() => abrirEditar(u)} title="Ver">
+                            <IconEdit /> Ver
                           </button>
                           <button
                             className={`gu-btn gu-btn--sm ${u.estado === 'activo' ? 'gu-btn--danger' : 'gu-btn--success'}`}
@@ -467,79 +468,118 @@ export default function AdminUsuarios() {
         </div>
       )}
 
-      {/* ── Modal Editar Usuario ── */}
+      {/* ── Modal Visualizar/Editar Usuario ── */}
       {modalEditar && (
-        <Modal title={`Editar usuario — ${modalEditar.nombre_completo}`} onClose={() => setModalEditar(null)}>
-          <div className="gu-form-grid">
-            <div className="gu-form-group gu-form-group--full">
-              <label>Nombre completo</label>
-              <input
-                className="gu-input"
-                value={formEditar.nombre_completo}
-                onChange={e => setFormEditar(p => ({ ...p, nombre_completo: e.target.value }))}
-              />
-            </div>
-            <div className="gu-form-group gu-form-group--full">
-              <label>Correo electrónico</label>
-              <input
-                className="gu-input"
-                type="email"
-                value={formEditar.correo}
-                onChange={e => setFormEditar(p => ({ ...p, correo: e.target.value }))}
-                placeholder="usuario@dominio.com"
-              />
-            </div>
-            <div className="gu-form-group">
-              <label>Teléfono</label>
-              <input
-                className="gu-input"
-                value={formEditar.telefono}
-                onChange={e => {
-                  const next = e.target.value
-                  if (!/^\d*$/.test(next)) return
-                  if (next.length > 10) return
-                  setFormEditar(p => ({ ...p, telefono: next }))
-                }}
-                inputMode="numeric"
-                minLength={10}
-                maxLength={10}
-                placeholder="10 dígitos"
-                required
-              />
-            </div>
-            <div className="gu-form-group">
-              <label>Rol</label>
-              <select
-                className="gu-input"
-                value={formEditar.rol}
-                onChange={e => setFormEditar(p => ({ ...p, rol: e.target.value }))}
-              >
-                <option value="productor">Productor</option>
-                <option value="tecnico">Técnico</option>
-                <option value="admin">Administrador</option>
-              </select>
-            </div>
-            <div className="gu-form-group">
-              <label>Estado</label>
-              <select
-                className="gu-input"
-                value={formEditar.estado}
-                onChange={e => setFormEditar(p => ({ ...p, estado: e.target.value }))}
-              >
-                <option value="activo">Activo</option>
-                <option value="inactivo">Inactivo</option>
-                <option value="pendiente">Pendiente</option>
-              </select>
-            </div>
-          </div>
-          <div className="gu-modal__actions">
-            <button className="gu-btn gu-btn--outline" onClick={() => setModalEditar(null)}>
-              Cancelar
-            </button>
-            <button className="gu-btn gu-btn--primary" onClick={guardarEditar} disabled={procesando}>
-              {procesando ? <><span className="gu-spinner gu-spinner--sm" /> Guardando...</> : <><IconCheck /> Guardar cambios</>}
-            </button>
-          </div>
+        <Modal title={modoEdicion ? `Editar usuario — ${modalEditar.nombre_completo}` : `Detalles — ${modalEditar.nombre_completo}`} onClose={() => setModalEditar(null)}>
+          {!modoEdicion ? (
+            <>
+              <div className="gu-info-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem', marginBottom: '1.5rem' }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>Nombre completo</label>
+                  <p style={{ fontSize: '0.95rem', color: '#1e293b', marginTop: '0.35rem', fontWeight: 500 }}>{formEditar.nombre_completo || '—'}</p>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>Correo electrónico</label>
+                  <p style={{ fontSize: '0.95rem', color: '#1e293b', marginTop: '0.35rem', fontWeight: 500 }}>{formEditar.correo || '—'}</p>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>Teléfono</label>
+                  <p style={{ fontSize: '0.95rem', color: '#1e293b', marginTop: '0.35rem', fontWeight: 500 }}>{formEditar.telefono || '—'}</p>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>Rol</label>
+                  <p style={{ fontSize: '0.95rem', color: '#1e293b', marginTop: '0.35rem', fontWeight: 500 }}>
+                    <span className={`gu-rol-tag ${ROL_CLASS[formEditar.rol] || ''}`}>{ROL_LABELS[formEditar.rol] || formEditar.rol}</span>
+                  </p>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', color: '#6b7280', fontWeight: 600 }}>Estado</label>
+                  <p style={{ fontSize: '0.95rem', color: '#1e293b', marginTop: '0.35rem', fontWeight: 500 }}><Badge estado={formEditar.estado} /></p>
+                </div>
+              </div>
+              <div className="gu-modal__actions">
+                <button className="gu-btn gu-btn--outline" onClick={() => setModalEditar(null)}>
+                  Cerrar
+                </button>
+                <button className="gu-btn gu-btn--primary" onClick={activarEdicion}>
+                  <IconEdit /> Editar
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="gu-form-grid">
+                <div className="gu-form-group gu-form-group--full">
+                  <label>Nombre completo</label>
+                  <input
+                    className="gu-input"
+                    value={formEditar.nombre_completo}
+                    onChange={e => setFormEditar(p => ({ ...p, nombre_completo: e.target.value }))}
+                  />
+                </div>
+                <div className="gu-form-group gu-form-group--full">
+                  <label>Correo electrónico</label>
+                  <input
+                    className="gu-input"
+                    type="email"
+                    value={formEditar.correo}
+                    onChange={e => setFormEditar(p => ({ ...p, correo: e.target.value }))}
+                    placeholder="usuario@dominio.com"
+                  />
+                </div>
+                <div className="gu-form-group">
+                  <label>Teléfono</label>
+                  <input
+                    className="gu-input"
+                    value={formEditar.telefono}
+                    onChange={e => {
+                      const next = e.target.value
+                      if (!/^\d*$/.test(next)) return
+                      if (next.length > 10) return
+                      setFormEditar(p => ({ ...p, telefono: next }))
+                    }}
+                    inputMode="numeric"
+                    minLength={10}
+                    maxLength={10}
+                    placeholder="10 dígitos"
+                    required
+                  />
+                </div>
+                <div className="gu-form-group">
+                  <label>Rol</label>
+                  <select
+                    className="gu-input"
+                    value={formEditar.rol}
+                    onChange={e => setFormEditar(p => ({ ...p, rol: e.target.value }))}
+                  >
+                    <option value="productor">Productor</option>
+                    <option value="tecnico">Técnico</option>
+                    <option value="admin">Administrador</option>
+                  </select>
+                </div>
+                <div className="gu-form-group">
+                  <label>Estado</label>
+                  <select
+                    className="gu-input"
+                    value={formEditar.estado}
+                    onChange={e => setFormEditar(p => ({ ...p, estado: e.target.value }))}
+                  >
+                    <option value="activo">Activo</option>
+                    <option value="inactivo">Inactivo</option>
+                    <option value="pendiente">Pendiente</option>
+                  </select>
+                </div>
+              </div>
+              <div className="gu-modal__actions">
+                <button className="gu-btn gu-btn--outline" onClick={cancelarEdicion}>
+                  Cancelar
+                </button>
+                <button className="gu-btn gu-btn--primary" onClick={guardarEditar} disabled={procesando}>
+                  {procesando ? <><span className="gu-spinner gu-spinner--sm" /> Guardando...</> : <><IconCheck /> Guardar cambios</>}
+                </button>
+              </div>
+            </>
+          )}
         </Modal>
       )}
 
