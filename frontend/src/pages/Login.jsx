@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useState, useEffect } from 'react'
+import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { authAPI } from '../services/api'
 import './Login.css'
@@ -7,6 +7,15 @@ import './Login.css'
 export default function Login() {
   const navigate    = useNavigate()
   const { login }   = useAuth()
+  const location = useLocation()
+
+  useEffect(() => {
+    const hasToken = !!localStorage.getItem('sigfito_token')
+    const fromLanding = new URLSearchParams(location.search).get('from') === 'landing'
+    const nextParam = new URLSearchParams(location.search).get('next')
+    // Si no viene desde el landing y no hay token, redirigir al landing.
+    if (!hasToken && !fromLanding && !nextParam) navigate('/')
+  }, [location, navigate])
 
   const [form, setForm]     = useState({ correo: '', password: '' })
   const [error, setError]   = useState('')
@@ -40,8 +49,12 @@ export default function Login() {
       const { token, user } = res.data
       login(token, user)
 
-      // Redirigir según rol
-      if (user.rol === 'admin')     navigate('/admin/dashboard')
+      // Redirigir según parámetro next o rol
+      const nextParam = new URLSearchParams(location.search).get('next')
+      if (nextParam) {
+        const next = decodeURIComponent(nextParam)
+        navigate(next)
+      } else if (user.rol === 'admin')     navigate('/admin/dashboard')
       else if (user.rol === 'productor') navigate('/productor/dashboard')
       else if (user.rol === 'tecnico')   navigate('/tecnico/dashboard')
       else navigate('/')
@@ -125,9 +138,13 @@ export default function Login() {
           <p className="form-subtitle">Ingrese sus credenciales para continuar</p>
           <div className="register-inline">
             <span className="register-inline-text">¿No tienes cuenta?</span>
-            <Link to="/register" className="register-inline-link">
+            <Link to="/register?from=landing" className="register-inline-link">
               Registrarse
             </Link>
+          </div>
+
+          <div style={{ marginTop: '0.5rem' }}>
+            <Link to="/" className="register-inline-link">Volver al Landing</Link>
           </div>
 
           <form onSubmit={handleSubmit} className="login-form" noValidate>

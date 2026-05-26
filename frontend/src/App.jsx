@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import Landing from './pages/Landing'
 import AdminLayout from './layouts/AdminLayout'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminUsuarios from './pages/admin/AdminUsuarios'
@@ -35,9 +36,10 @@ function Placeholder({ titulo }) {
 
 function PrivateRoute({ children, roles }) {
   const { user, loading } = useAuth()
+  const location = window.location
   if (loading) return null
-  if (!user) return <Navigate to="/login" replace />
-  if (roles && !roles.includes(user.rol)) return <Navigate to="/login" replace />
+  if (!user) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />
+  if (roles && !roles.includes(user.rol)) return <Navigate to={`/login?next=${encodeURIComponent(location.pathname + location.search)}`} replace />
   return children
 }
 
@@ -56,6 +58,7 @@ export default function App() {
   return (
     <AuthProvider>
       <Routes>
+        <Route path="/"          element={<PublicRoute><Landing /></PublicRoute>} />
         <Route path="/login"    element={<PublicRoute><Login /></PublicRoute>} />
         <Route path="/register" element={<PublicRoute><Register /></PublicRoute>} />
 
@@ -90,7 +93,7 @@ export default function App() {
           <Route path="inspecciones" element={<TecnicoInspecciones />} />
         </Route>
 
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </AuthProvider>
   )

@@ -254,7 +254,7 @@ export default function Register() {
           Tu solicitud de acceso fue registrada con éxito. El administrador del ICA
           revisará tu información y activará tu cuenta. Recibirás confirmación pronto.
         </p>
-        <Link to="/login" className="btn-back">Volver al inicio de sesión</Link>
+        <Link to="/login?from=landing" className="btn-back">Volver al inicio de sesión</Link>
       </div>
     </div>
   )
@@ -275,7 +275,7 @@ export default function Register() {
       <div className="reg-card">
         {/* Header */}
         <div className="reg-card__header">
-          <Link to="/login" className="reg-back-link">
+          <Link to="/login?from=landing" className="reg-back-link">
             <IconArrowLeft className="reg-back-link__icon" />
             <span>Volver</span>
           </Link>
