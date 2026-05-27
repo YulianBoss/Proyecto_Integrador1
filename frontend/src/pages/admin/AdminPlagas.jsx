@@ -30,7 +30,7 @@ export default function AdminPlagas() {
             <h3>Crear plaga</h3>
             <p>Abre la pagina de registro de nuevas plagas.</p>
           </div>
-          <div className="ad-card__icon" aria-hidden="true"><IconPlusBug /></div>
+          <div className="ad-card__icon-wrapper" aria-hidden="true"><IconPlusBug /></div>
         </article>
 
         <article
@@ -49,7 +49,7 @@ export default function AdminPlagas() {
             <h3>Editar o eliminar plaga</h3>
             <p>Abre la pagina para editar, desactivar o eliminar plagas.</p>
           </div>
-          <div className="ad-card__icon" aria-hidden="true"><IconEditBug /></div>
+          <div className="ad-card__icon-wrapper" aria-hidden="true"><IconEditBug /></div>
         </article>
       </div>
     </section>

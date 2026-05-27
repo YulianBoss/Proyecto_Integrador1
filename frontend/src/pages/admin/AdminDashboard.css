@@ -1,276 +1,268 @@
+/* ── Variables Fieles al Boceto ───────────────────────────── */
 :root {
-  --ad-card-bg: #ffffff;
-  --ad-card-border: #dce3ec;
-  --ad-text-main: #142433;
-  --ad-text-soft: #556476;
-  --ad-bar-a: #2467b2;
-  --ad-bar-b: #2f8c66;
-  --ad-bar-c: #bd8f2c;
-  --ad-bar-d: #bf4f48;
+  --ad-bg-body: #F9FAFB;
+  --ad-card-bg: #FFFFFF;
+  --ad-text-dark: #1F2937;
+  --ad-text-gray: #6B7280;
+  --ad-border-light: #E5E7EB;
+  
+  /* Colores del Hero - Ajustados al verde azulado (teal) */
+  --ad-hero-grad-start: #034B51; /* Azul verdoso muy oscuro */
+  --ad-hero-grad-end: #1C8883;   /* Azul verdoso más claro */
+  
+  /* Color de Acción (Enlaces de tarjetas) */
+  --ad-action-color: #0D6E6A;    /* Tono teal a juego */
 }
 
 .ad-dash-root {
-  display: grid;
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+  padding-bottom: 2rem;
+  animation: ad-fade-in 0.4s ease-out;
 }
 
+/* ── Banner de Bienvenida (Hero) ───────────────────────────── */
 .ad-dash-hero {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(125deg, #12344f 0%, #1e5d86 42%, #3ea070 100%);
-  color: #f8fbff;
+  background: linear-gradient(90deg, var(--ad-hero-grad-start) 0%, var(--ad-hero-grad-end) 100%);
+  color: #ffffff;
   border-radius: 16px;
-  padding: 1.2rem 1.3rem;
-  box-shadow: 0 10px 28px rgba(18, 52, 79, 0.24);
+  padding: 2.5rem 3rem;
+  display: flex;
+  align-items: center;
 }
 
-.ad-dash-orb {
+/* Patrón de puntos decorativos */
+.ad-dash-hero__pattern {
   position: absolute;
-  border-radius: 999px;
+  top: 0; 
+  bottom: 0;
+  right: 25%;
+  width: 150px;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.15) 2px, transparent 2px);
+  background-size: 24px 24px;
+  background-position: center;
   pointer-events: none;
 }
 
-.ad-dash-orb--a {
-  width: 130px;
-  height: 130px;
-  right: -18px;
-  top: -32px;
-  background: rgba(255, 255, 255, 0.08);
+/* Decoración de hojas abstractas simuladas con CSS */
+.ad-dash-hero__leaves {
+  position: absolute;
+  right: -5%;
+  top: -20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(ellipse at center, rgba(255,255,255,0.08) 0%, transparent 70%);
+  border-radius: 50%;
+  pointer-events: none;
 }
+.ad-dash-hero__leaves::before,
+.ad-dash-hero__leaves::after {
+  content: '';
+  position: absolute;
+  width: 180px; height: 180px;
+  background: rgba(255, 255, 255, 0.04);
+  border-radius: 0 100px 0 100px;
+  transform: rotate(45deg);
+}
+.ad-dash-hero__leaves::before { top: 20px; right: 80px; }
+.ad-dash-hero__leaves::after { top: 80px; right: 20px; }
 
-.ad-dash-orb--b {
-  width: 92px;
-  height: 92px;
-  right: 125px;
-  bottom: -42px;
-  background: rgba(255, 255, 255, 0.07);
+.ad-dash-hero__content {
+  position: relative;
+  z-index: 1;
 }
 
 .ad-dash-kicker {
-  margin: 0;
-  position: relative;
-  z-index: 1;
-  font-size: 0.72rem;
-  letter-spacing: 0.08em;
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
   text-transform: uppercase;
-  opacity: 0.9;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 0.5rem;
 }
 
 .ad-dash-hero h2 {
-  position: relative;
-  z-index: 1;
-  margin: 0.25rem 0 0;
-  font-size: clamp(1.45rem, 1.15rem + 1vw, 2.05rem);
-  line-height: 1.05;
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
-.ad-dash-hero p:last-of-type {
-  position: relative;
-  z-index: 1;
+.ad-dash-hero p {
+  margin: 0.5rem 0 0;
+  font-size: 1rem;
+  font-weight: 300;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ── Encabezado de Sección ─────────────────────────────────── */
+.ad-dash-header {
+  margin-top: 0.5rem;
+}
+
+.ad-dash-header h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ad-text-dark);
+}
+
+.ad-dash-header p {
   margin: 0.35rem 0 0;
-  max-width: 680px;
-  font-size: 0.86rem;
-  line-height: 1.45;
+  font-size: 0.95rem;
+  color: var(--ad-text-gray);
 }
 
+/* ── Grid de Tarjetas (Módulos) ────────────────────────────── */
 .ad-dash-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
 }
 
+/* ── Estilos de Tarjeta (Card) ─────────────────────────────── */
 .ad-card {
-  border: 1px solid var(--ad-card-border);
   background: var(--ad-card-bg);
-  border-radius: 14px;
-  min-height: 180px;
-  padding: 1rem;
-  box-shadow: 0 8px 20px rgba(17, 24, 39, 0.07);
-  animation: ad-appear 0.35s ease both;
+  border: 1px solid rgba(0,0,0,0.04);
+  border-radius: 20px;
+  padding: 1.75rem 1.75rem 1.25rem 1.75rem;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-direction: column;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
+  animation: ad-slide-up 0.4s ease-out both;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .ad-card[role='button'] {
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .ad-card[role='button']:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 24px rgba(17, 24, 39, 0.12);
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
 }
 
-.ad-card[role='button']:focus-visible {
-  outline: 2px solid #2b6cb0;
-  outline-offset: 2px;
+/* Parte superior: Icono y botón 'i' */
+.ad-card__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
 }
 
+.ad-card__icon-wrapper {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.ad-card__icon-wrapper svg {
+  width: 28px;
+  height: 28px;
+}
+
+/* Botón 'i' calcado del boceto */
+.ad-card__info-btn {
+  background: transparent;
+  border: 1px solid #D1D5DB;
+  color: #6B7280;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  font-family: serif;
+  font-size: 0.85rem;
+  font-style: italic;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+/* Cuerpo de la tarjeta */
 .ad-card__body {
   flex: 1;
+  margin-bottom: 1.5rem;
 }
 
-.ad-card__icon {
-  width: 72px;
-  height: 72px;
-  border-radius: 18px;
-  display: grid;
-  place-items: center;
-  flex-shrink: 0;
-}
-
-.ad-card__icon svg {
-  width: 38px;
-  height: 38px;
-}
-
-.ad-card h3 {
+.ad-card h4 {
   margin: 0;
-  font-size: clamp(1.2rem, 0.95rem + 0.9vw, 1.75rem);
-  color: var(--ad-text-main);
-  line-height: 1.08;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ad-text-dark);
 }
 
 .ad-card p {
   margin: 0.5rem 0 0;
-  font-size: clamp(0.82rem, 0.74rem + 0.18vw, 0.95rem);
-  color: var(--ad-text-soft);
-  max-width: 260px;
+  font-size: 0.85rem;
+  color: var(--ad-text-gray);
+  line-height: 1.5;
 }
 
-.ad-card--users .ad-card__icon {
-  background: #e6effb;
-  color: #2b6cb0;
-}
-
-.ad-card--pests .ad-card__icon {
-  background: #f6ecd7;
-  color: #946200;
-}
-
-.ad-card--crops .ad-card__icon {
-  background: #e4f2e9;
-  color: #206a45;
-}
-
-.ad-card--inspect .ad-card__icon {
-  background: #ede9f7;
-  color: #5b3ea6;
-}
-
-.ad-card--chart {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  align-items: stretch;
-}
-
-.ad-chart__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.8rem;
-}
-
-.ad-chart__header h3 {
-  margin: 0;
-  font-size: clamp(1rem, 0.88rem + 0.35vw, 1.2rem);
-  color: var(--ad-text-main);
-}
-
-.ad-chart__header span {
-  font-size: 0.7rem;
-  color: #5e6f82;
-}
-
-.ad-bars {
-  display: grid;
-  gap: 0.48rem;
-}
-
-.ad-bar-row {
-  animation: ad-appear 0.35s ease both;
-}
-
-.ad-bar-row__top {
+/* Footer: Línea y Flexbox para separar texto y flecha */
+.ad-card__footer {
+  border-top: 1px solid var(--ad-border-light);
+  padding-top: 1.25rem;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.22rem;
+  color: var(--ad-action-color);
+  font-weight: 600;
+  font-size: 0.95rem;
 }
 
-.ad-bar-row__top strong {
-  font-size: 0.77rem;
-  color: #1f2f41;
+.ad-card__link-icon svg {
+  width: 20px;
+  height: 20px;
+  transition: transform 0.2s ease;
 }
 
-.ad-bar-row__top small {
-  font-size: 0.72rem;
-  color: #63758a;
+.ad-card:hover .ad-card__link-icon svg {
+  transform: translateX(4px);
 }
 
-.ad-bar-track {
-  width: 100%;
-  height: 9px;
-  border-radius: 999px;
-  background: #ecf1f6;
-  overflow: hidden;
+/* ── Colores Específicos por Módulo ─────── */
+.ad-card--users .ad-card__icon-wrapper {
+  background: #EAF4FC; color: #007079;
+}
+.ad-card--pests .ad-card__icon-wrapper {
+  background: #FFF1E5; color: #B45309;
+}
+.ad-card--crops .ad-card__icon-wrapper {
+  background: #E8F5E9; color: #166534;
+}
+.ad-card--inspect .ad-card__icon-wrapper {
+  background: #F3E8FF; color: #6B21A8;
 }
 
-.ad-bar-fill {
-  display: block;
-  height: 100%;
-  border-radius: 999px;
-  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.14);
+/* ── Animaciones ───────────────────────────────────────────── */
+@keyframes ad-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
 }
 
-.ad-chart__cta {
-  margin-top: 0.85rem;
-  border: 0;
-  border-radius: 8px;
-  background: #e9f0f9;
-  color: #214f84;
-  padding: 0.46rem 0.62rem;
-  font: inherit;
-  font-size: 0.8rem;
-  cursor: pointer;
-  width: fit-content;
+@keyframes ad-slide-up {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.ad-chart__cta:hover {
-  background: #d6e5f7;
-}
-
-@keyframes ad-appear {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
+/* ── Responsive ────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .ad-dash-hero {
+    padding: 1.5rem;
+    flex-direction: column;
+    align-items: flex-start;
   }
-  to {
-    opacity: 1;
-    transform: translateY(0);
+  .ad-dash-hero__pattern, .ad-dash-hero__leaves {
+    display: none;
   }
-}
-
-@media (max-width: 900px) {
   .ad-dash-grid {
     grid-template-columns: 1fr;
-  }
-
-  .ad-card {
-    min-height: 160px;
-  }
-
-  .ad-card__icon {
-    width: 62px;
-    height: 62px;
-  }
-
-  .ad-card__icon svg {
-    width: 32px;
-    height: 32px;
   }
 }
