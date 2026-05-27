@@ -1,156 +1,267 @@
-:root {
-  --pl-sidebar-w: 252px;
-  --pl-topbar-h:  60px;
-  --pl-green-dark: #1a4731;
-  --pl-green-mid:  #2e7d52;
-  --pl-green-light:#4caf7d;
-  --pl-green-pale: #e8f5ee;
-}
-
-.pl-root {
-  display: flex;
-  min-height: 100vh;
-  background: #f4f6f9;
-  font-family: var(--font-body);
-  position: relative;
-}
-
-/* ── Dropdown ───────────────────────────────────────────────── */
-.pl-dropdown {
-  position: absolute;
-  left: 1rem;
-  top: calc(var(--pl-topbar-h) - 6px);
-  width: min(320px, calc(100vw - 2rem));
-  max-height: calc(100vh - var(--pl-topbar-h) - 1.5rem);
-  overflow-y: auto;
-  background: var(--pl-green-dark);
-  border-radius: 12px;
-  box-shadow: 0 14px 32px rgba(10, 30, 20, 0.36);
-  border: 1px solid rgba(255,255,255,0.08);
-  z-index: 320;
-}
-
-.pl-brand {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding: 1.25rem 1.25rem 1rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-.pl-brand__icon {
-  width: 38px; height: 38px;
-  background: var(--pl-green-light);
-  border-radius: 9px;
-  display: flex; align-items: center; justify-content: center;
-  color: #fff; flex-shrink: 0;
-}
-.pl-brand__icon svg { width: 18px; height: 18px; }
-.pl-brand__name { font-family: var(--font-display); font-size: 1rem; color: #fff; line-height: 1.1; }
-.pl-brand__sub  { font-size: 0.65rem; color: rgba(255,255,255,0.45); letter-spacing: 0.04em; margin-top: 2px; }
-
-/* User row */
-.pl-user-row {
-  display: flex;
-  align-items: center;
-  gap: 0.65rem;
-  padding: 0.875rem 1.25rem;
-  border-bottom: 1px solid rgba(255,255,255,0.08);
-}
-
-.pl-avatar {
-  width: 34px; height: 34px;
-  border-radius: 50%;
-  background: var(--pl-green-light);
-  color: #fff; font-size: 0.75rem; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.pl-user__name  { font-size: 0.82rem; font-weight: 600; color: #fff; line-height: 1.2; }
-.pl-user__role  {
-  font-size: 0.67rem; color: rgba(255,255,255,0.45);
-  background: rgba(255,255,255,0.1); border-radius: 20px;
-  padding: 1px 7px; display: inline-block; margin-top: 3px;
-}
-
-.pl-nav { padding: 0.5rem 0; flex: 1; }
-.pl-nav__section {
-  font-size: 0.62rem; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: rgba(255,255,255,0.3);
-  padding: 0.875rem 1.25rem 0.4rem;
-}
-.pl-nav__item {
-  display: flex; align-items: center; gap: 0.75rem;
-  padding: 0.6rem 1.25rem;
-  color: rgba(255,255,255,0.65);
-  font-size: 0.835rem; text-decoration: none;
-  border-left: 3px solid transparent;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
-}
-.pl-nav__item:hover { background: rgba(255,255,255,0.06); color: #fff; }
-.pl-nav__item--active {
-  background: rgba(255,255,255,0.1); color: #fff;
-  border-left-color: var(--pl-green-light);
-}
-.pl-nav__icon { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
-.pl-nav__icon svg { width: 16px; height: 16px; }
-
-.pl-sidebar__footer {
-  padding: 0.875rem 1.25rem;
-  border-top: 1px solid rgba(255,255,255,0.08);
-}
-.pl-logout {
-  display: flex; align-items: center; gap: 0.6rem;
-  color: rgba(255,255,255,0.5); font-size: 0.8rem;
-  background: none; border: none; cursor: pointer;
-  padding: 0; font-family: inherit; width: 100%;
-  transition: color 0.15s;
-}
-.pl-logout:hover { color: #fff; }
-.pl-logout svg { width: 15px; height: 15px; }
-
-/* ── Main ───────────────────────────────────────────────────── */
-.pl-main {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-}
-
-.pl-main--full {
-  width: 100%;
-}
-
-.pl-topbar {
-  height: var(--pl-topbar-h);
-  background: #fff; border-bottom: 1px solid #e5e9f0;
-  display: flex; align-items: center; padding: 0 1.5rem; gap: 1rem;
-  position: sticky; top: 0; z-index: 260;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.06);
-}
-.pl-menu-btn {
-  display: flex;
-  align-items: center;
+/* ==========================================================================
+   VARIABLES CORPORATIVAS
+   ========================================================================== */
+   :root {
+    --pl-nav-h: 68px;
+    
+    /* Paleta SIGFITO Institucional */
+    --pl-green-dark: #113324;
+    --pl-green-mid: #1b4d36;
+    --pl-green-light: #22c55e;
+    
+    /* Escala de Grises / Corporativos (Slate) */
+    --pl-slate-900: #0f172a;
+    --pl-slate-800: #1e293b;
+    --pl-slate-700: #334155;
+    --pl-slate-500: #64748b;
+    --pl-slate-300: #cbd5e1;
+    --pl-gray-100: #f1f5f9;
+    --pl-gray-50: #f8fafc;
+    
+    --font-body: system-ui, -apple-system, sans-serif;
+  }
+  
+  /* ==========================================================================
+     LAYOUT PRINCIPAL
+     ========================================================================== */
+  .pl-root {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    background-color: var(--pl-gray-50);
+    font-family: var(--font-body);
+    position: relative;
+  }
+  
+  .pl-content-area {
+    flex: 1;
+    padding: 2rem 1.5rem;
+    width: 100%;
+    max-width: 1440px;
+    margin: 0 auto;
+  }
+  
+  /* ==========================================================================
+     NAVBAR SUPERIOR (FIJO)
+     ========================================================================== */
+  .pl-navbar {
+    height: var(--pl-nav-h);
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 1.5rem;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.03);
+  }
+  
+  /* Branding (Izquierda) */
+  .pl-navbar__brand {
+    display: flex;
+    align-items: center;
+    gap: 0.875rem;
+  }
+  .brand-logo-icon {
+    width: 36px; height: 36px;
+    background: var(--pl-green-mid);
+    color: #ffffff;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .brand-logo-icon svg { width: 20px; height: 20px; }
+  
+  .brand-text { display: flex; flex-direction: column; line-height: 1.1; }
+  .brand-name {
+    font-weight: 800; font-size: 1.1rem;
+    color: var(--pl-slate-900); letter-spacing: -0.02em;
+  }
+  .brand-badge {
+    font-size: 0.65rem; color: var(--pl-green-mid);
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em;
+  }
+  
+  /* Acciones (Derecha) */
+  .pl-navbar__actions {
+    display: flex; align-items: center; gap: 1.25rem;
+  }
+  
+  .nav-date {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.8rem; color: var(--pl-slate-500); font-weight: 500;
+  }
+  .nav-date svg { width: 16px; height: 16px; }
+  
+  .nav-icon-btn {
+    position: relative; background: none; border: none;
+    color: var(--pl-slate-500); cursor: pointer; padding: 0.4rem;
+    border-radius: 8px; display: flex; align-items: center; justify-content: center;
+    transition: background 0.2s, color 0.2s;
+  }
+  .nav-icon-btn:hover { background: var(--pl-gray-100); color: var(--pl-slate-900); }
+  .nav-icon-btn svg { width: 22px; height: 22px; }
+  .nav-badge-dot {
+    position: absolute; top: 4px; right: 4px;
+    width: 8px; height: 8px; background: #ef4444;
+    border-radius: 50%; border: 2px solid #fff;
+  }
+  
+  /* Perfil de Usuario */
+  .nav-user-profile {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding-left: 0.75rem; border-left: 1px solid #e2e8f0;
+  }
+  .user-avatar {
+    width: 36px; height: 36px;
+    background: var(--pl-slate-800); color: #ffffff;
+    border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem; font-weight: 700; letter-spacing: 0.5px;
+  }
+  .user-info { display: flex; flex-direction: column; line-height: 1.2; }
+  .user-name { font-size: 0.85rem; font-weight: 600; color: var(--pl-slate-900); }
+  .user-role { font-size: 0.7rem; color: var(--pl-green-light); font-weight: 600; }
+  
+/* Botón Hamburguesa */
+.mobile-menu-toggle {
+  display: flex; 
+  flex-direction: column; /* Apila el icono y el texto verticalmente */
+  align-items: center; 
   justify-content: center;
-  background: none; border: none; cursor: pointer; color: #6b7280;
-  padding: 0.25rem; border-radius: 8px;
-}
-.pl-menu-btn:hover { background: #f1f5f9; }
-.pl-menu-btn svg { width: 20px; height: 20px; }
-.pl-topbar__title { flex: 1; }
-.pl-topbar__title h3 { font-size: 0.95rem; color: #374151; font-weight: 600; }
-.pl-topbar__title p  { font-size: 0.72rem; color: #6b7280; margin-top: 1px; }
-.pl-topbar__actions  { display: flex; align-items: center; gap: 0.875rem; }
-.pl-topbar__date     { display: flex; align-items: center; gap: 0.4rem; font-size: 0.75rem; color: #6b7280; }
-.pl-topbar__date svg { width: 14px; height: 14px; }
-.pl-topbar__avatar   {
-  width: 32px; height: 32px; border-radius: 50%;
-  background: var(--pl-green-mid); color: #fff;
-  font-size: 0.7rem; font-weight: 700;
-  display: flex; align-items: center; justify-content: center;
+  gap: 2px; /* Espacio mínimo entre el ícono y el texto */
+  background: none; 
+  border: 1px solid #e2e8f0; 
+  border-radius: 8px;
+  padding: 0.35rem 0.5rem; 
+  cursor: pointer; 
+  color: var(--pl-slate-700);
+  transition: background 0.2s, color 0.2s;
 }
 
-.pl-page { padding: 1.75rem; flex: 1; }
+.mobile-menu-toggle:hover { 
+  background: var(--pl-gray-100); 
+  color: var(--pl-slate-900); 
+}
 
-@media (max-width: 900px) {
-  .pl-page { padding: 1.25rem; }
+.mobile-menu-toggle svg { 
+  width: 20px; 
+  height: 20px; 
+}
+
+/* Estilo para el texto "MENÚ" */
+.mobile-menu-text {
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  color: inherit; /* Hereda el color para que cambie junto con el ícono en el :hover */
+}
+  
+  /* ==========================================================================
+     MENÚ DESPLEGABLE (DROPDOWN)
+     ========================================================================== */
+  .pl-dropdown-menu {
+    position: absolute;
+    top: calc(var(--pl-nav-h) + 0.5rem);
+    right: 1.5rem;
+    width: 280px;
+    background: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 20px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1);
+    border: 1px solid #e2e8f0;
+    z-index: 200;
+    overflow: hidden;
+  }
+  
+  .dropdown-nav { padding: 0.5rem 0; }
+  .dropdown-group { margin-bottom: 0.5rem; }
+  .dropdown-group:last-child { margin-bottom: 0; }
+  .dropdown-title {
+    font-size: 0.65rem; text-transform: uppercase; font-weight: 700;
+    color: var(--pl-slate-500); padding: 0.75rem 1.25rem 0.25rem;
+    letter-spacing: 0.05em;
+  }
+  
+  .dropdown-item {
+    display: flex; align-items: center; gap: 0.75rem;
+    padding: 0.6rem 1.25rem; color: var(--pl-slate-700);
+    font-size: 0.85rem; font-weight: 500; text-decoration: none;
+    border-left: 3px solid transparent; transition: all 0.15s ease;
+  }
+  .dropdown-item:hover { background: var(--pl-gray-50); color: var(--pl-green-mid); }
+  .dropdown-item.active {
+    background: #ecfdf5; color: var(--pl-green-mid);
+    border-left-color: var(--pl-green-mid); font-weight: 600;
+  }
+  .dropdown-icon { display: flex; align-items: center; justify-content: center; color: inherit; }
+  .dropdown-icon svg { width: 18px; height: 18px; }
+  
+  .dropdown-footer {
+    padding: 0.75rem 1.25rem; background: var(--pl-gray-50); border-top: 1px solid #e2e8f0;
+  }
+  .logout-btn {
+    display: flex; align-items: center; gap: 0.5rem; width: 100%;
+    padding: 0.6rem; background: none; border: none;
+    color: #ef4444; font-size: 0.85rem; font-weight: 600; cursor: pointer;
+    border-radius: 6px; transition: background 0.15s;
+  }
+  .logout-btn:hover { background: #fef2f2; }
+  .logout-btn svg { width: 18px; height: 18px; }
+  
+/* ==========================================================================
+   FOOTER CORPORATIVO (SLATE OSCURO) 
+   ========================================================================== */
+.pl-footer {
+  background: var(--pl-slate-900);
+  color: var(--pl-slate-300);
+  padding: 1.5rem 1.5rem 1rem; 
+  margin-top: auto;
+}
+
+.footer-content {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 1.5rem; /* Menos espacio entre las columnas */
+  border-bottom: 1px solid var(--pl-slate-800);
+  padding-bottom: 1.25rem; /* Menos espacio antes de la línea divisoria */
+  margin-bottom: 0.75rem; /* Menos espacio después de la línea divisoria */
+}
+
+.footer-brand-col { display: flex; flex-direction: column; gap: 0.5rem; }
+.footer-logo { display: flex; align-items: center; gap: 0.5rem; color: #ffffff; }
+.footer-logo svg { width: 22px; height: 22px; color: var(--pl-green-light); }
+.f-logo-text { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.02em; }
+.f-desc { font-size: 0.8rem; line-height: 1.4; max-width: 320px; color: var(--pl-slate-500); }
+
+.footer-links-col h5 {
+  color: #ffffff; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.75rem;
+}
+.footer-links-col a, .contact-item {
+  display: flex; align-items: center; gap: 0.5rem;
+  color: var(--pl-slate-300); text-decoration: none;
+  font-size: 0.8rem; margin-bottom: 0.4rem; transition: color 0.2s;
+}
+.footer-links-col a:hover { color: var(--pl-green-light); }
+.contact-item { color: var(--pl-slate-500); }
+.contact-item svg { width: 14px; height: 14px; color: var(--pl-slate-500); }
+
+.footer-copyright {
+  max-width: 1400px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.75rem; /* Texto de copyright más pequeño */
+  color: var(--pl-slate-500);
+}
+
+/* Responsive Footer */
+@media (max-width: 1024px) {
+  .footer-content { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+}
+@media (max-width: 768px) {
+  .footer-content { grid-template-columns: 1fr; gap: 1.5rem; }
+  .footer-copyright { flex-direction: column; text-align: center; gap: 0.5rem; }
 }
