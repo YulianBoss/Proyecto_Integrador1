@@ -84,10 +84,10 @@ const obtenerTecnicoConMenorCarga = async (authHeader, departamento, municipio) 
     }
 };
 
-const verificarInspeccionTecnico = async (inspeccionId, tecnicoId) => {
+const verificarInspeccionTecnico = async (inspeccionId, tecnicoId, tecnicoDep = null, tecnicoMun = null) => {
     const rows = await queryAsync(
-        `SELECT * FROM inspecciones WHERE id = ? AND asistente_id = ?`,
-        [inspeccionId, tecnicoId]
+        `SELECT * FROM inspecciones WHERE id = ? AND (asistente_id = ? OR (asistente_id IS NULL AND departamento = ? AND municipio = ?))`,
+        [inspeccionId, tecnicoId, tecnicoDep, tecnicoMun]
     );
     return rows[0] || null;
 };
@@ -163,7 +163,7 @@ const sincronizarLotesInspeccion = async (inspeccion, authHeader) => {
 
     const lotesEvaluacion = await queryAsync(
         `SELECT id, inspeccion_id, lote_id, lote_codigo, predio_nombre,
-                total_plantas_inspeccionadas, observaciones_lote, evaluado, fecha_evaluacion
+                total_plantas_inspeccionadas, observaciones_lote, fecha_evaluacion
          FROM inspeccion_lotes
          WHERE inspeccion_id = ?
          ORDER BY lote_codigo ASC, lote_id ASC`,
@@ -192,7 +192,7 @@ const sincronizarLotesInspeccion = async (inspeccion, authHeader) => {
 
     const lotesConEstado = lotesEvaluacion.map((loteEval) => ({
         ...loteEval,
-        evaluado: Number(loteEval.evaluado || 0) === 1,
+        evaluado: loteEval.fecha_evaluacion !== null && loteEval.fecha_evaluacion !== undefined,
         total_plantas_inspeccionadas: Number(loteEval.total_plantas_inspeccionadas || 0),
         especie_id: lotesMetaMap.get(Number(loteEval.lote_id))?.especie_id || null,
         especie_nombre: lotesMetaMap.get(Number(loteEval.lote_id))?.especie_nombre || null,
@@ -514,7 +514,7 @@ const getInspeccionesTecnico = async (req, res) => {
                (
                  SELECT COUNT(*)
                  FROM inspeccion_lotes il
-                 WHERE il.inspeccion_id = i.id AND il.evaluado = 1
+                 WHERE il.inspeccion_id = i.id AND il.fecha_evaluacion IS NOT NULL
                ) AS lotes_evaluados
         FROM inspecciones i
         WHERE (
@@ -548,6 +548,8 @@ const getInspeccionesTecnico = async (req, res) => {
 
 const getDetalleRealizacion = async (req, res) => {
     const asistente_id = req.user.id;
+    const tecnicoDep = req.user.departamento || null;
+    const tecnicoMun = req.user.municipio || null;
     const inspeccionId = Number(req.params.id);
 
     if (!Number.isInteger(inspeccionId) || inspeccionId <= 0) {
@@ -555,7 +557,7 @@ const getDetalleRealizacion = async (req, res) => {
     }
 
     try {
-        const inspeccion = await verificarInspeccionTecnico(inspeccionId, asistente_id);
+        const inspeccion = await verificarInspeccionTecnico(inspeccionId, asistente_id, tecnicoDep, tecnicoMun);
         if (!inspeccion) {
             return res.status(404).json({ message: 'Inspeccion no encontrada o no asignada al tecnico' });
         }
@@ -595,6 +597,8 @@ const getDetalleRealizacion = async (req, res) => {
 
 const iniciarInspeccion = async (req, res) => {
     const asistente_id = req.user.id;
+    const tecnicoDep = req.user.departamento || null;
+    const tecnicoMun = req.user.municipio || null;
     const id = Number(req.params.id);
 
     if (!Number.isInteger(id) || id <= 0) {
@@ -602,7 +606,7 @@ const iniciarInspeccion = async (req, res) => {
     }
 
     try {
-        const insp = await verificarInspeccionTecnico(id, asistente_id);
+        const insp = await verificarInspeccionTecnico(id, asistente_id, tecnicoDep, tecnicoMun);
         if (!insp) return res.status(404).json({ message: 'Inspeccion no encontrada' });
 
         if (insp.estado !== 'pendiente') {
@@ -625,6 +629,8 @@ const iniciarInspeccion = async (req, res) => {
 
 const guardarEvaluacionLote = async (req, res) => {
     const asistente_id = req.user.id;
+    const tecnicoDep = req.user.departamento || null;
+    const tecnicoMun = req.user.municipio || null;
     const inspeccionId = Number(req.params.id);
     const loteId = Number(req.params.loteId);
     const totalPlantas = Number(req.body.total_plantas_inspeccionadas);
@@ -661,7 +667,7 @@ const guardarEvaluacionLote = async (req, res) => {
     }
 
     try {
-        const inspeccion = await verificarInspeccionTecnico(inspeccionId, asistente_id);
+        const inspeccion = await verificarInspeccionTecnico(inspeccionId, asistente_id, tecnicoDep, tecnicoMun);
         if (!inspeccion) return res.status(404).json({ message: 'Inspeccion no encontrada o no asignada al tecnico' });
 
         if (!['pendiente', 'en_proceso'].includes(inspeccion.estado)) {
@@ -750,7 +756,7 @@ const guardarEvaluacionLote = async (req, res) => {
         await commitAsync();
 
         const resumenRows = await queryAsync(
-            `SELECT COUNT(*) AS total, SUM(CASE WHEN evaluado = 1 THEN 1 ELSE 0 END) AS evaluados
+            `SELECT COUNT(*) AS total, SUM(CASE WHEN fecha_evaluacion IS NOT NULL THEN 1 ELSE 0 END) AS evaluados
              FROM inspeccion_lotes
              WHERE inspeccion_id = ?`,
             [inspeccionId]
@@ -779,6 +785,8 @@ const guardarEvaluacionLote = async (req, res) => {
 
 const completarInspeccion = async (req, res) => {
     const asistente_id = req.user.id;
+    const tecnicoDep = req.user.departamento || null;
+    const tecnicoMun = req.user.municipio || null;
     const id = Number(req.params.id);
     const { observaciones_generales, recomendaciones, concepto_tecnico } = req.body;
 
@@ -791,7 +799,7 @@ const completarInspeccion = async (req, res) => {
     }
 
     try {
-        const insp = await verificarInspeccionTecnico(id, asistente_id);
+        const insp = await verificarInspeccionTecnico(id, asistente_id, tecnicoDep, tecnicoMun);
         if (!insp) return res.status(404).json({ message: 'Inspeccion no encontrada' });
 
         if (!['pendiente', 'en_proceso'].includes(insp.estado)) {
@@ -801,7 +809,7 @@ const completarInspeccion = async (req, res) => {
         await sincronizarLotesInspeccion(insp, req.headers.authorization);
 
         const resumen = await queryAsync(
-            `SELECT COUNT(*) AS total, SUM(CASE WHEN evaluado = 1 THEN 1 ELSE 0 END) AS evaluados
+            `SELECT COUNT(*) AS total, SUM(CASE WHEN fecha_evaluacion IS NOT NULL THEN 1 ELSE 0 END) AS evaluados
              FROM inspeccion_lotes
              WHERE inspeccion_id = ?`,
             [id]

@@ -186,6 +186,9 @@ connection.connect((err) => {
             next
         ),
         (next) => ensureColumnInTable('inspeccion_lote_plagas', 'plaga_id', 'INT NULL', 'inspeccion_lote_id', next),
+        (next) => ensureColumnInTable('inspeccion_lotes', 'fecha_evaluacion', 'DATETIME NULL', 'observaciones_lote', next),
+        (next) => ensureColumnInTable('inspeccion_lotes', 'lote_codigo', 'VARCHAR(120) NULL', 'lote_id', next),
+        (next) => ensureColumnInTable('inspeccion_lotes', 'predio_nombre', 'VARCHAR(255) NULL', 'lote_codigo', next),
         () => console.log('✅ Esquema inspection-service verificado'),
     ]);
 });
