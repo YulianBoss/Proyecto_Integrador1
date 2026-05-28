@@ -602,6 +602,7 @@ export default function LotesPage() {
                 Haz clic en una especie para seleccionarla
               </div>
             )}
+            
           </div>
 
           {/* Variedad */}
