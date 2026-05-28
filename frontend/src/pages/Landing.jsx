@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import BrandLogo from '../components/BrandLogo'
 import './Landing.css'
 
 export default function Landing() {
@@ -13,10 +14,7 @@ export default function Landing() {
       <header className="lp-navbar">
         <div className="lp-container lp-nav">
           <div className="lp-logo">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="#0B4632"/>
-              <path d="M12 6C9.5 9 8.5 11.5 12 15C15.5 11.5 14.5 9 12 6Z" fill="#10B981"/>
-            </svg>
+            <BrandLogo width={24} height={24} />
             <span>SIGFITO</span>
           </div>
           <nav>
@@ -209,12 +207,10 @@ export default function Landing() {
           <div className="lp-footer-top-grid">
             <div className="lp-footer-brand">
               <div className="lp-logo">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="#10B981"/>
-                </svg>
+                <BrandLogo width={20} height={20} />
                 <span>SIGFITO</span>
               </div>
-              <p>Gestión fitosanitaria para la exportación agrícola colombiana.</p>
+              <p>Plataforma digital nacional para el control, trazabilidad y gestión fitosanitaria en la producción agrícola de Colombia.</p>
               <div className="lp-footer-socials">
                 <a href="#linkedin" className="lp-link-social">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"/><rect x="2" y="9" width="4" height="12"/><circle cx="4" cy="4" r="2"/></svg>
@@ -244,8 +240,8 @@ export default function Landing() {
             <div className="lp-footer-links-col lp-footer-contact-info">
               <h4>CONTACTO</h4>
               <p>soporte@sigfito.com</p>
-              <p>+57 (300) 123-4567</p>
-              <p>Bogotá, Colombia</p>
+              <p>+57 601 123 4567</p>
+              <p>Bucaramanga, Colombia</p>
             </div>
           </div>
 
@@ -253,6 +249,7 @@ export default function Landing() {
 
           <div className="lp-footer-bottom">
             <p>© {new Date().getFullYear()} SIGFITO Technologies. Proyecto Universitario — Todos los derechos reservados.</p>
+            <p>Creado por Miguel Buitrago, Johan Caro, Luis Álvarez y Julián Torres.</p>
             <div className="lp-footer-legal-links">
               <a href="#terms">Términos de Servicio</a>
               <a href="#privacy">Políticas de Privacidad</a>

@@ -325,7 +325,6 @@ export default function AdminUsuarios() {
                   <tr>
                     <th>Usuario</th>
                     <th>Número de Identificación</th>
-                    <th>Teléfono</th>
                     <th>Correo</th>
                     <th>Acciones</th>
                   </tr>
@@ -340,7 +339,6 @@ export default function AdminUsuarios() {
                         </div>
                       </td>
                       <td className="gu-td-muted">{u.num_identificacion || '—'}</td>
-                      <td className="gu-td-muted">{u.telefono || '—'}</td>
                       <td className="gu-td-muted">{u.correo}</td>
                       <td>
                         <div className="gu-actions">
@@ -407,7 +405,6 @@ export default function AdminUsuarios() {
                     <th>Rol solicitado</th>
                     <th>Identificación</th>
                     <th>Tarjeta Profesional</th>
-                    <th>Teléfono</th>
                     <th>Fecha solicitud</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -430,7 +427,6 @@ export default function AdminUsuarios() {
                       </td>
                       <td className="gu-td-muted">{s.num_identificacion || '—'}</td>
                       <td className="gu-td-muted">{s.rol === 'tecnico' ? (s.tarjeta_profesional || '—') : '—'}</td>
-                      <td className="gu-td-muted">{s.telefono || '—'}</td>
                       <td className="gu-td-muted">
                         {s.fecha_registro
                           ? new Date(s.fecha_registro).toLocaleDateString('es-CO')

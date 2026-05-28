@@ -547,6 +547,15 @@ body {
   padding: 3rem 0 1.5rem;
 }
 
+.lp-footer .lp-logo {
+  color: #fff;
+}
+
+.lp-footer .lp-logo svg path:first-child {
+  fill: currentColor;
+  stroke: none;
+}
+
 .lp-footer-top-grid {
   display: grid;
   grid-template-columns: 2fr repeat(4, 1fr);

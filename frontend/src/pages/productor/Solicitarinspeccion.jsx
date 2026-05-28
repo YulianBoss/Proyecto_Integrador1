@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useCallback } from 'react'
+import { useLocation } from 'react-router-dom'
 import { productionAPI, inspeccionesAPI, lotesAPI, authAPI } from '../../services/api'
 import './productor.css'
 
@@ -18,7 +19,8 @@ function Badge({ estado }) {
 }
 
 export default function SolicitarInspeccion() {
-  const [tab, setTab] = useState('solicitar')
+  const location = useLocation()
+  const [tab, setTab] = useState(location.pathname.includes('historial') ? 'historial' : 'solicitar')
   const [lugares, setLugares]             = useState([])
   const [lugarSel, setLugarSel]           = useState('')
   const [lotesActivos, setLotesActivos]   = useState([])

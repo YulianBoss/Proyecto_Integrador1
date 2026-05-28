@@ -7,7 +7,7 @@ const NAV_ITEMS = [
   {
     section: 'Principal',
     items: [
-      { to: '/admin/dashboard', label: 'Dashboard', icon: <IconDashboard /> },
+      { to: '/admin/dashboard', label: 'Inicio', icon: <IconDashboard /> },
     ]
   },
   {
@@ -218,14 +218,14 @@ export default function AdminLayout() {
             <h4>Contacto</h4>
             <div className="contact-item"><IconPhone /> +57 601 123 4567</div>
             <div className="contact-item"><IconMail /> soporte@sigfito.gov.co</div>
-            <div className="contact-item"><IconMapPin /> Bogotá, Colombia</div>
+            <div className="contact-item"><IconMapPin /> Bucaramanga, Colombia</div>
           </div>
         </div>
         
         {/* Franja Inferior */}
         <div className="adm-footer-bottom">
           <p>© {new Date().getFullYear()} SIGFITO. Todos los derechos reservados.</p>
-          <p>Hecho con <span className="heart">💚</span> para el campo colombiano</p>
+          <p>Creado por Miguel Buitrago, Johan Caro, Luis Álvarez y Julián Torres.</p>
         </div>
       </footer>
 
@@ -254,9 +254,9 @@ function IconChevronDown() { return <svg viewBox="0 0 24 24" {...S}><polyline po
 /* Icono clonado exactamente del layout del productor */
 function IconLeafLogo() { 
   return (
-    <svg viewBox="0 0 24 24" {...S}>
-      <path d="M12 2C8 6 6 10 6 14a6 6 0 0 0 12 0c0-4-2-8-6-12z"/>
-      <line x1="12" y1="14" x2="12" y2="22"/>
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" fill="#0B4632"/>
+      <path d="M12 6C9.5 9 8.5 11.5 12 15C15.5 11.5 14.5 9 12 6Z" fill="#10B981"/>
     </svg>
   )
 }

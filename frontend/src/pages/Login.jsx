@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link, useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { authAPI } from '../services/api'
+import BrandLogo from '../components/BrandLogo'
 import './Login.css'
 
 export default function Login() {
@@ -67,9 +68,7 @@ export default function Login() {
         {/* Brand header */}
         <div className="login-header">
           <div className="brand-icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24">
-              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-            </svg>
+            <BrandLogo width={20} height={20} />
           </div>
           <span className="brand-name">SIGFITO</span>
         </div>
@@ -93,9 +92,11 @@ export default function Login() {
         </div>
 
         {/* Back to landing */}
-        <Link to="/" className="back-link">
-          <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
-          Volver al inicio
+        <Link to="/" className="btn-back" aria-label="Volver al inicio">
+          <span className="btn-back-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6" /></svg>
+          </span>
+          Volver
         </Link>
 
         {/* Form */}

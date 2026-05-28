@@ -595,7 +595,7 @@ export default function LotesPage() {
             {/* Confirmacion de seleccion */}
             {especieSel ? (
               <div style={{ marginTop:'0.4rem', fontSize:'0.8rem', color:'#2e7d52', display:'flex', alignItems:'center', gap:'0.3rem' }}>
-                <IcoCheck /> Seleccionado: <strong>{especieSel.nombre}</strong>
+               <span style={{ width:'14px', height:'14px', display:'inline-flex', flexShrink:0 }}><IcoCheck /></span> Seleccionado: <strong>{especieSel.nombre}</strong>
               </div>
             ) : (
               <div style={{ marginTop:'0.4rem', fontSize:'0.75rem', color:'#9ca3af' }}>

@@ -7,7 +7,7 @@ const NAV = [
   {
     section: 'Principal',
     items: [
-      { to: '/productor/dashboard', label: 'Dashboard', icon: <IcoDash /> },
+      { to: '/productor/dashboard', label: 'Inicio', icon: <IcoDash /> },
     ]
   },
   {
@@ -70,10 +70,6 @@ export default function ProductorLayout() {
 
         <div className="pl-navbar__actions">
           <span className="nav-date"><IcoCal /> {hoy}</span>
-          <button className="nav-icon-btn" aria-label="Notificaciones">
-            <IcoBell />
-            <span className="nav-badge-dot"></span>
-          </button>
           
           <div className="nav-user-profile">
             <div className="user-avatar">{ini}</div>
@@ -159,12 +155,13 @@ export default function ProductorLayout() {
             <h5>Contacto Directo</h5>
             <span className="contact-item"><IcoDash /> +57 601 123 4567</span>
             <span className="contact-item"><IcoClip /> soporte@sigfito.gov.co</span>
+            <span className="contact-item"><IcoMap /> Bucaramanga, Colombia</span>
           </div>
         </div>
         
         <div className="footer-copyright">
           <p>© {new Date().getFullYear()} SIGFITO Gobierno. Todos los derechos reservados.</p>
-          <p>Operando para el campo colombiano.</p>
+          <p>Creado por Miguel Buitrago, Johan Caro, Luis Álvarez y Julián Torres.</p>
         </div>
       </footer>
 
@@ -185,4 +182,3 @@ function IcoLeaf()   { return <svg viewBox="0 0 24 24" {...S}><path d="M12 2C8 6
 function IcoLogout() { return <svg viewBox="0 0 24 24" {...S}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg> }
 function IcoCal()    { return <svg viewBox="0 0 24 24" {...S}><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg> }
 function IcoMenu()   { return <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg> }
-function IcoBell()   { return <svg viewBox="0 0 24 24" {...S}><path d="M15 17h5l-1.405-1.405A2.032 2.032 0 0 1 18 14.158V11c0-3.07-1.64-5.64-4.5-6.32V4a1.5 1.5 0 0 0-3 0v0.68C7.64 5.36 6 7.92 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg> }
