@@ -6,6 +6,7 @@ const {
     getMisSolicitudes,
     getDetalleSolicitud,
     getInspeccionesTecnico,
+    getTecnicoDashboard,
     getDetalleRealizacion,
     iniciarInspeccion,
     guardarEvaluacionLote,
@@ -20,6 +21,7 @@ router.get('/mis-solicitudes',  verifyToken, verifyProductor, getMisSolicitudes)
 
 // ── Rutas del Técnico ───────────────────────────────────────
 router.get('/tecnico/mis-inspecciones', verifyToken, verifyTecnico, getInspeccionesTecnico);
+router.get('/tecnico/dashboard',       verifyToken, verifyTecnico, getTecnicoDashboard);
 router.get('/:id/realizacion',          verifyToken, verifyTecnico, getDetalleRealizacion);
 router.patch('/:id/iniciar',            verifyToken, verifyTecnico, iniciarInspeccion);
 router.put('/:id/lotes/:loteId/evaluar',verifyToken, verifyTecnico, guardarEvaluacionLote);

@@ -2,11 +2,15 @@ import { Fragment, useState, useEffect, useCallback, useMemo } from 'react'
 import { tecnicoAPI } from '../../services/api'
 
 const S = { fill:'none', stroke:'currentColor', strokeWidth:'1.8', strokeLinecap:'round', strokeLinejoin:'round' }
-const IcoX = () => <svg viewBox="0 0 24 24" {...S}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-const IcoCheck = () => <svg viewBox="0 0 24 24" {...S}><polyline points="20 6 9 17 4 12"/></svg>
-const IcoPlay = () => <svg viewBox="0 0 24 24" {...S}><polygon points="5 3 19 12 5 21 5 3"/></svg>
-const IcoClip = () => <svg viewBox="0 0 24 24" {...S}><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
-const IcoEmpty = () => <svg viewBox="0 0 24 24" {...S}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+const ICO = { width:16, height:16, flexShrink:0 }
+const IcoX = () => <svg viewBox="0 0 24 24" {...S} {...ICO}><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+const IcoCheck = () => <svg viewBox="0 0 24 24" {...S} {...ICO}><polyline points="20 6 9 17 4 12"/></svg>
+const IcoPlay = () => <svg viewBox="0 0 24 24" {...S} {...ICO}><polygon points="5 3 19 12 5 21 5 3"/></svg>
+const IcoClip = () => <svg viewBox="0 0 24 24" {...S} {...ICO}><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2"/><rect x="9" y="3" width="6" height="4" rx="1"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="13" y2="16"/></svg>
+const IcoEmpty = () => <svg viewBox="0 0 24 24" {...S} style={{width:32,height:32,flexShrink:0}}><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+const IcoPlus = () => <svg viewBox="0 0 24 24" {...S} {...ICO}><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+const IcoMinus = () => <svg viewBox="0 0 24 24" {...S} {...ICO}><line x1="5" y1="12" x2="19" y2="12"/></svg>
+const IcoDoc = () => <svg viewBox="0 0 24 24" {...S} {...ICO}><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
 
 const ESTADO_LABEL = {
   pendiente: 'Pendiente',
@@ -14,43 +18,24 @@ const ESTADO_LABEL = {
   completada: 'Completada',
   cancelada: 'Cancelada',
 }
-const ESTADO_COLOR = {
-  pendiente: { bg: '#fff8e1', color: '#b45309', border: '#fcd34d' },
-  en_proceso: { bg: '#e0f2fe', color: '#0369a1', border: '#7dd3fc' },
-  completada: { bg: '#e8f5ee', color: '#2e7d52', border: '#6ee7b7' },
-  cancelada: { bg: '#fef2f2', color: '#b91c1c', border: '#fca5a5' },
-}
 
 function Badge({ estado }) {
-  const s = ESTADO_COLOR[estado] || { bg:'#f3f4f6', color:'#374151', border:'#d1d5db' }
   return (
-    <span style={{
-      background: s.bg, color: s.color, border: `1px solid ${s.border}`,
-      borderRadius: '20px', padding: '2px 10px', fontSize: '0.72rem', fontWeight: 600,
-      whiteSpace: 'nowrap',
-    }}>
+    <span className={`ti-badge ti-badge--${estado}`}>
       {ESTADO_LABEL[estado] || estado}
     </span>
   )
 }
 
-function Modal({ title, onClose, children, maxWidth = 820 }) {
+function Modal({ title, onClose, children }) {
   return (
-    <div
-      style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.45)', zIndex:400, display:'flex', alignItems:'center', justifyContent:'center', padding:'1rem' }}
-      onClick={onClose}
-    >
-      <div
-        style={{ background:'#fff', borderRadius:'14px', width:'100%', maxWidth, maxHeight:'92vh', overflowY:'auto', boxShadow:'0 20px 60px rgba(0,0,0,0.25)' }}
-        onClick={e => e.stopPropagation()}
-      >
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', padding:'1.125rem 1.5rem', borderBottom:'1px solid #e5e9f0', position:'sticky', top:0, background:'#fff', zIndex:2 }}>
-          <h3 style={{ margin:0, fontSize:'1rem', color:'#1e2a4a', fontWeight:700 }}>{title}</h3>
-          <button onClick={onClose} style={{ background:'none', border:'none', cursor:'pointer', color:'#9ca3af', padding:4, display:'flex', borderRadius:6 }}>
-            <IcoX />
-          </button>
+    <div className="ti-modal-overlay" onClick={onClose}>
+      <div className="ti-modal" onClick={e => e.stopPropagation()}>
+        <div className="ti-modal__header">
+          <h3>{title}</h3>
+          <button onClick={onClose} className="ti-modal__close"><IcoX /></button>
         </div>
-        <div style={{ padding:'1.25rem 1.5rem 1.5rem' }}>{children}</div>
+        <div className="ti-modal__body">{children}</div>
       </div>
     </div>
   )
@@ -64,11 +49,13 @@ export default function TecnicoInspecciones() {
   const [filtro, setFiltro] = useState('todas')
   const [procesando, setProcesando] = useState(false)
 
+  const [modoVista, setModoVista] = useState('lotes') 
   const [modalRealizar, setModalRealizar] = useState(null)
   const [detalleRealizacion, setDetalleRealizacion] = useState(null)
   const [loadingDetalle, setLoadingDetalle] = useState(false)
   const [loteActivo, setLoteActivo] = useState(null)
-  const [formLote, setFormLote] = useState({ total_plantas_inspeccionadas: '', observaciones_lote: '', plagas: [] })
+  
+  const [formLote, setFormLote] = useState({ total_plantas_inspeccionadas: 0, observaciones_lote: '', plagas: [] })
   const [erroresLote, setErroresLote] = useState({})
 
   const [formCompletar, setFormCompletar] = useState({ observaciones_generales: '', recomendaciones: '', concepto_tecnico: '' })
@@ -80,20 +67,14 @@ export default function TecnicoInspecciones() {
   }
 
   const fmtFecha = (f) => f ? new Date(f).toLocaleDateString('es-CO', { day:'2-digit', month:'short', year:'numeric' }) : '—'
+  
   const normalizeSugerida = (item) => {
-    if (typeof item === 'string') {
-      return { plaga_id: null, plaga_nombre: item, plantas_afectadas: 0 }
-    }
-    return {
-      plaga_id: item?.id ? Number(item.id) : null,
-      plaga_nombre: item?.nombre || item?.plaga_nombre || '',
-      plantas_afectadas: 0,
-    }
+    if (typeof item === 'string') return { plaga_id: null, plaga_nombre: item, plantas_afectadas: 0 }
+    return { plaga_id: item?.id ? Number(item.id) : null, plaga_nombre: item?.nombre || item?.plaga_nombre || '', plantas_afectadas: 0 }
   }
 
   const cargar = useCallback(async () => {
-    setLoading(true)
-    setError('')
+    setLoading(true); setError('')
     try {
       const params = filtro !== 'todas' ? { estado: filtro } : {}
       const res = await tecnicoAPI.misInspecciones(params)
@@ -107,7 +88,7 @@ export default function TecnicoInspecciones() {
 
   useEffect(() => { cargar() }, [cargar])
 
-  const cargarDetalleRealizacion = async (inspeccionId) => {
+  const cargarDetalleRealizacion = async (inspeccionId, autoSwitchToFinal = false) => {
     setLoadingDetalle(true)
     try {
       const res = await tecnicoAPI.detalleRealizacion(inspeccionId)
@@ -118,32 +99,45 @@ export default function TecnicoInspecciones() {
         recomendaciones: data?.inspeccion?.recomendaciones || '',
         concepto_tecnico: data?.inspeccion?.concepto_tecnico || '',
       })
-      const pendiente = (data?.lotes || []).find((l) => !l.evaluado) || data?.lotes?.[0] || null
-      setLoteActivo(pendiente)
+      
+      const lotesData = data?.lotes || []
+      const pendiente = lotesData.find((l) => !l.evaluado) || null
+      
+      setLoteActivo(pendiente || lotesData[0])
+      
       if (pendiente) {
-        const plagasBase = (data.plagas_sugeridas || []).map(normalizeSugerida)
-        const plagasExistentes = pendiente.plagas?.length ? pendiente.plagas : plagasBase
-        setFormLote({
-          total_plantas_inspeccionadas: pendiente.total_plantas_inspeccionadas ? String(pendiente.total_plantas_inspeccionadas) : '',
-          observaciones_lote: pendiente.observaciones_lote || '',
-          plagas: plagasExistentes.map((p) => ({
-            plaga_id: p.plaga_id ? Number(p.plaga_id) : null,
-            plaga_nombre: p.plaga_nombre,
-            plantas_afectadas: Number(p.plantas_afectadas || 0),
-          })),
-        })
+        configurarFormularioLote(pendiente, data.plagas_sugeridas)
+        setModoVista('lotes')
+      } else if (autoSwitchToFinal) {
+        setModoVista('final')
       }
+
       setErroresLote({})
       setErroresCompletar({})
     } catch (e) {
-      toast_(e?.response?.data?.message || 'No fue posible cargar el detalle de la inspeccion', 'error')
+      toast_(e?.response?.data?.message || 'Error al cargar detalle', 'error')
     } finally {
       setLoadingDetalle(false)
     }
   }
 
+  const configurarFormularioLote = (lote, plagasSugeridasGlobales) => {
+    const plagasBase = (plagasSugeridasGlobales || []).map(normalizeSugerida)
+    const plagasExistentes = lote.plagas?.length ? lote.plagas : plagasBase
+    setFormLote({
+      total_plantas_inspeccionadas: lote.total_plantas_inspeccionadas ? Number(lote.total_plantas_inspeccionadas) : 0,
+      observaciones_lote: lote.observaciones_lote || '',
+      plagas: plagasExistentes.map((p) => ({
+        plaga_id: p.plaga_id ? Number(p.plaga_id) : null,
+        plaga_nombre: p.plaga_nombre,
+        plantas_afectadas: Number(p.plantas_afectadas || 0),
+      })),
+    })
+  }
+
   const abrirRealizar = async (insp) => {
     setModalRealizar(insp)
+    setModoVista('lotes')
     setDetalleRealizacion(null)
     setLoteActivo(null)
     await cargarDetalleRealizacion(insp.id)
@@ -153,36 +147,43 @@ export default function TecnicoInspecciones() {
     setProcesando(true)
     try {
       await tecnicoAPI.iniciar(insp.id)
-      toast_('Inspeccion iniciada correctamente')
+      toast_('Inspección iniciada correctamente')
       cargar()
       abrirRealizar(insp)
     } catch (e) {
-      toast_(e?.response?.data?.message || 'Error al iniciar la inspeccion', 'error')
+      toast_(e?.response?.data?.message || 'Error al iniciar', 'error')
     } finally {
       setProcesando(false)
     }
   }
 
   const seleccionarLote = (lote) => {
+    setModoVista('lotes')
     setLoteActivo(lote)
-    const plagasBase = (detalleRealizacion?.plagas_sugeridas || []).map(normalizeSugerida)
-    const plagasExistentes = lote.plagas?.length ? lote.plagas : plagasBase
-    setFormLote({
-      total_plantas_inspeccionadas: lote.total_plantas_inspeccionadas ? String(lote.total_plantas_inspeccionadas) : '',
-      observaciones_lote: lote.observaciones_lote || '',
-      plagas: plagasExistentes.map((p) => ({
-        plaga_id: p.plaga_id ? Number(p.plaga_id) : null,
-        plaga_nombre: p.plaga_nombre,
-        plantas_afectadas: Number(p.plantas_afectadas || 0),
-      })),
-    })
+    configurarFormularioLote(lote, detalleRealizacion?.plagas_sugeridas)
     setErroresLote({})
   }
 
-  const setPlagaValue = (idx, value) => {
-    setFormLote((prev) => {
+  const cambiarTotalPlantas = (factor) => {
+    if (loteActivo?.evaluado) return
+    setFormLote(prev => ({ ...prev, total_plantas_inspeccionadas: Math.max(0, prev.total_plantas_inspeccionadas + factor) }))
+  }
+
+  const cambiarPlaga = (idx, factor) => {
+    if (loteActivo?.evaluado) return
+    setFormLote(prev => {
       const next = [...prev.plagas]
-      next[idx] = { ...next[idx], plantas_afectadas: value === '' ? '' : Number(value) }
+      const actual = Number(next[idx].plantas_afectadas) || 0
+      next[idx].plantas_afectadas = Math.max(0, actual + factor)
+      return { ...prev, plagas: next }
+    })
+  }
+
+  const setPlagaManual = (idx, value) => {
+    if (loteActivo?.evaluado) return
+    setFormLote(prev => {
+      const next = [...prev.plagas]
+      next[idx].plantas_afectadas = value === '' ? '' : Number(value)
       return { ...prev, plagas: next }
     })
   }
@@ -191,15 +192,15 @@ export default function TecnicoInspecciones() {
     const errs = {}
     const total = Number(formLote.total_plantas_inspeccionadas)
     if (!Number.isInteger(total) || total <= 0) {
-      errs.total_plantas_inspeccionadas = 'Ingresa un total de plantas valido mayor a cero'
+      errs.total_plantas_inspeccionadas = 'Debe ser mayor a cero'
     }
 
     formLote.plagas.forEach((p) => {
       const afectadas = Number(p.plantas_afectadas)
       if (!Number.isInteger(afectadas) || afectadas < 0) {
-        errs[`plaga_${p.plaga_nombre}`] = 'Debe ser un entero >= 0'
+        errs[`plaga_${p.plaga_nombre}`] = 'Inválido'
       } else if (Number.isInteger(total) && total > 0 && afectadas > total) {
-        errs[`plaga_${p.plaga_nombre}`] = 'No puede superar el total inspeccionado'
+        errs[`plaga_${p.plaga_nombre}`] = 'Supera el total'
       }
     })
 
@@ -222,12 +223,11 @@ export default function TecnicoInspecciones() {
           plantas_afectadas: Number(p.plantas_afectadas || 0),
         })),
       })
-
-      toast_(`Lote ${loteActivo.lote_codigo || loteActivo.lote_id} evaluado`) 
-      await cargarDetalleRealizacion(detalleRealizacion.inspeccion.id)
+      toast_(`Lote evaluado`) 
+      await cargarDetalleRealizacion(detalleRealizacion.inspeccion.id, true) 
       await cargar()
     } catch (e) {
-      toast_(e?.response?.data?.message || 'No se pudo guardar la evaluacion del lote', 'error')
+      toast_(e?.response?.data?.message || 'Error al guardar lote', 'error')
     } finally {
       setProcesando(false)
     }
@@ -235,10 +235,9 @@ export default function TecnicoInspecciones() {
 
   const completarInspeccion = async () => {
     if (!detalleRealizacion) return
-
     const errs = {}
     if (!formCompletar.concepto_tecnico.trim()) {
-      errs.concepto_tecnico = 'El concepto tecnico es obligatorio'
+      errs.concepto_tecnico = 'El concepto técnico es obligatorio'
     }
     setErroresCompletar(errs)
     if (Object.keys(errs).length) return
@@ -246,326 +245,416 @@ export default function TecnicoInspecciones() {
     setProcesando(true)
     try {
       const res = await tecnicoAPI.completar(detalleRealizacion.inspeccion.id, formCompletar)
-      toast_(`Inspeccion completada. Riesgo: ${res?.data?.metricas?.nivel_riesgo || 'calculado'}`)
+      toast_(`Inspección completada. Riesgo: ${res?.data?.metricas?.nivel_riesgo || 'calculado'}`)
       setModalRealizar(null)
-      setDetalleRealizacion(null)
       await cargar()
     } catch (e) {
-      toast_(e?.response?.data?.message || 'No se pudo completar la inspeccion', 'error')
+      toast_(e?.response?.data?.message || 'Error al completar', 'error')
     } finally {
       setProcesando(false)
     }
   }
 
-  const resumenDetalle = useMemo(() => detalleRealizacion?.resumen || {
-    total_lotes: 0,
-    lotes_evaluados: 0,
-    lotes_pendientes: 0,
-    todos_evaluados: false,
-  }, [detalleRealizacion])
+  const resumenDetalle = useMemo(() => detalleRealizacion?.resumen || { total_lotes: 0, lotes_evaluados: 0, todos_evaluados: false }, [detalleRealizacion])
+  const esCompletada = detalleRealizacion?.inspeccion?.estado === 'completada'
+  const informeFinal = detalleRealizacion?.informe || null
+
+  const totalAfectacionesLive = formLote.plagas.reduce((acc, p) => acc + (Number(p.plantas_afectadas) || 0), 0)
+
+  // Respaldo para el nombre del lote
+  const nombreLoteSeguro = loteActivo?.lote_codigo || loteActivo?.nombre || (loteActivo?.lote_id ? `Lote #${loteActivo.lote_id}` : 'Desconocido')
 
   return (
-    <section style={{ maxWidth: 980 }}>
+    <div className="ti-dashboard-area">
       {toast && (
-        <div style={{
-          position:'fixed', bottom:'1.5rem', right:'1.5rem', zIndex:500,
-          background: toast.type === 'error' ? '#fef2f2' : '#e8f5ee',
-          color: toast.type === 'error' ? '#b91c1c' : '#2e7d52',
-          border: `1px solid ${toast.type === 'error' ? '#fca5a5' : '#6ee7b7'}`,
-          borderRadius:12, padding:'0.75rem 1.25rem', fontSize:'0.85rem',
-          boxShadow:'0 4px 20px rgba(0,0,0,0.12)', display:'flex', alignItems:'center', gap:'0.5rem',
-        }}>
+        <div className={`ti-toast ti-toast--${toast.type}`}>
           {toast.type === 'error' ? <IcoX /> : <IcoCheck />} {toast.msg}
         </div>
       )}
 
-      <div style={{ marginBottom:'1.5rem' }}>
-        <h2 style={{ margin:'0 0 0.25rem', fontSize:'1.35rem', color:'#1e2a4a', fontWeight:800 }}>
-          Mis Inspecciones
-        </h2>
-        <p style={{ margin:0, fontSize:'0.85rem', color:'#6b7280' }}>
-          Flujo completo: consulta, evaluacion por lote y cierre final consolidado.
-        </p>
+      <div className="ti-header-block">
+        <h2>Mis Inspecciones Asignadas</h2>
+        <p>Flujo completo: consulta, evaluación por lote y cierre final consolidado.</p>
       </div>
 
-      <div style={{ display:'flex', gap:'0.5rem', marginBottom:'1.25rem', flexWrap:'wrap' }}>
-        {[['todas', 'Todas'], ['pendiente', 'Pendientes'], ['en_proceso', 'En proceso']].map(([val, lbl]) => (
-          <button
-            key={val}
-            onClick={() => setFiltro(val)}
-            style={{
-              padding:'0.4rem 1rem', borderRadius:20, border:'1.5px solid',
-              cursor:'pointer', fontSize:'0.8rem', fontWeight:600,
-              background: filtro === val ? '#3b4fa8' : '#fff',
-              color: filtro === val ? '#fff' : '#3b4fa8',
-              borderColor: filtro === val ? '#3b4fa8' : '#c5cdf0',
-            }}
-          >
-            {lbl}
-          </button>
-        ))}
-        <button
-          onClick={cargar}
-          style={{ marginLeft:'auto', padding:'0.4rem 1rem', borderRadius:20, border:'1.5px solid #e5e9f0', background:'#fff', cursor:'pointer', fontSize:'0.8rem', color:'#6b7280', fontWeight:600 }}
-        >
-          Actualizar
-        </button>
-      </div>
-
-      {loading ? (
-        <div style={{ textAlign:'center', padding:'3rem', color:'#9ca3af', fontSize:'0.9rem' }}>Cargando inspecciones...</div>
-      ) : error ? (
-        <div style={{ background:'#fef2f2', border:'1px solid #fca5a5', borderRadius:10, padding:'1.25rem', color:'#b91c1c', fontSize:'0.875rem' }}>{error}</div>
-      ) : inspecciones.length === 0 ? (
-        <div style={{ textAlign:'center', padding:'3rem 1rem', color:'#9ca3af' }}>
-          <IcoEmpty />
-          <p style={{ marginTop:'0.75rem', fontSize:'0.9rem' }}>No tienes inspecciones asignadas en este momento.</p>
+      <div className="ti-toolbar">
+        <div className="ti-filters">
+          {[['todas', 'Todas'], ['pendiente', 'Pendientes'], ['en_proceso', 'En proceso'], ['completada', 'Completadas']].map(([val, lbl]) => (
+            <button key={val} onClick={() => setFiltro(val)} className={`ti-btn-filter ${filtro === val ? 'active' : ''}`}>{lbl}</button>
+          ))}
         </div>
-      ) : (
-        <div style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
-          {inspecciones.map((insp) => {
-            const total = Number(insp.total_lotes || 0)
-            const evaluados = Number(insp.lotes_evaluados || 0)
-            return (
-              <article key={insp.id} style={{
-                background:'#fff', borderRadius:12, border:'1.5px solid #e5e9f0',
-                padding:'1.25rem 1.5rem', display:'flex', flexDirection:'column', gap:'0.75rem',
-                boxShadow:'0 1px 4px rgba(0,0,0,0.05)',
-              }}>
-                <div style={{ display:'flex', alignItems:'flex-start', justifyContent:'space-between', gap:'1rem', flexWrap:'wrap' }}>
-                  <div>
-                    <div style={{ display:'flex', alignItems:'center', gap:'0.6rem', flexWrap:'wrap' }}>
-                      <span style={{ fontWeight:700, color:'#1e2a4a', fontSize:'0.95rem' }}>Inspeccion #{insp.id}</span>
-                      <Badge estado={insp.estado} />
-                    </div>
-                    <div style={{ marginTop:'0.4rem', fontSize:'0.8rem', color:'#6b7280', display:'flex', gap:'1.25rem', flexWrap:'wrap' }}>
-                      <span>Predio: {insp.predio_nombre || 'No registrado'}</span>
-                      <span>Lugar: {insp.lugar_nombre || `#${insp.lugar_produccion_id}`}</span>
-                      <span>Lote base: {insp.lote_codigo || `#${insp.lote_id}`}</span>
-                      <span>Programada: {fmtFecha(insp.fecha_programada || insp.fecha_solicitud)}</span>
-                    </div>
-                    <div style={{ marginTop:'0.5rem', fontSize:'0.78rem', color:'#475569' }}>
-                      Avance lotes: <strong>{evaluados}</strong>/{total || '0'} evaluados
-                    </div>
-                  </div>
+        <button onClick={cargar} className="ti-btn-outline">Actualizar</button>
+      </div>
 
-                  <div style={{ display:'flex', gap:'0.5rem', flexShrink:0 }}>
+      <div className="ti-table-card">
+        {loading ? (
+          <div className="ti-empty-state">Cargando inspecciones...</div>
+        ) : error ? (
+          <div className="ti-empty-state error">{error}</div>
+        ) : inspecciones.length === 0 ? (
+          <div className="ti-empty-state"><IcoEmpty /> No tienes inspecciones en esta categoría.</div>
+        ) : (
+          <table className="ti-table">
+            <thead>
+              <tr>
+                <th>ID</th><th>Estado</th><th>Predio</th><th>Lugar / Lote</th><th>Programada</th><th>Avance</th><th>Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inspecciones.map((insp) => (
+                <tr key={insp.id}>
+                  <td className="fw-bold">#{insp.id}</td>
+                  <td><Badge estado={insp.estado} /></td>
+                  <td>{insp.predio_nombre || 'No registrado'}</td>
+                  <td>{insp.lugar_nombre} <span className="ti-tag-lote">{insp.lote_codigo}</span></td>
+                  <td>{fmtFecha(insp.fecha_programada || insp.fecha_solicitud)}</td>
+                  <td className="text-muted">{insp.lotes_evaluados || 0}/{insp.total_lotes || 0}</td>
+                  <td>
                     {insp.estado === 'pendiente' && (
-                      <button
-                        disabled={procesando}
-                        onClick={() => handleIniciar(insp)}
-                        style={{
-                          display:'flex', alignItems:'center', gap:'0.4rem',
-                          padding:'0.45rem 1rem', borderRadius:8, border:'none', cursor:'pointer',
-                          background:'#3b4fa8', color:'#fff', fontSize:'0.8rem', fontWeight:600,
-                          opacity: procesando ? 0.6 : 1,
-                        }}
-                      >
-                        <IcoPlay /> Iniciar
+                      <button disabled={procesando} onClick={() => handleIniciar(insp)} className="ti-btn-action green"><IcoPlay /> Iniciar</button>
+                    )}
+                    {['pendiente', 'en_proceso', 'completada'].includes(insp.estado) && (
+                      <button disabled={procesando} onClick={() => abrirRealizar(insp)} className="ti-btn-action outline">
+                        <IcoClip /> {insp.estado === 'completada' ? 'Ver informe' : 'Realizar'}
                       </button>
                     )}
-
-                    {(insp.estado === 'pendiente' || insp.estado === 'en_proceso') && (
-                      <button
-                        disabled={procesando}
-                        onClick={() => abrirRealizar(insp)}
-                        style={{
-                          display:'flex', alignItems:'center', gap:'0.4rem',
-                          padding:'0.45rem 1rem', borderRadius:8, border:'1.5px solid #c5cdf0', cursor:'pointer',
-                          background:'#fff', color:'#3b4fa8', fontSize:'0.8rem', fontWeight:600,
-                          opacity: procesando ? 0.6 : 1,
-                        }}
-                      >
-                        <IcoClip /> Realizar
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </article>
-            )
-          })}
-        </div>
-      )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
 
       {modalRealizar && (
-        <Modal title={`Realizar inspeccion #${modalRealizar.id}`} onClose={() => setModalRealizar(null)} maxWidth={980}>
+        <Modal title={`Inspección Técnica #${modalRealizar.id}`} onClose={() => setModalRealizar(null)}>
           {loadingDetalle || !detalleRealizacion ? (
-            <p style={{ margin:0, color:'#6b7280' }}>Cargando detalle...</p>
+            <div className="ti-empty-state">Cargando detalle de la inspección...</div>
           ) : (
-            <div style={{ display:'grid', gridTemplateColumns:'minmax(250px, 310px) 1fr', gap:'1rem' }}>
-              <aside style={{ border:'1px solid #e5e9f0', borderRadius:12, padding:'0.9rem' }}>
-                <h4 style={{ margin:'0 0 0.4rem', color:'#1e2a4a', fontSize:'0.95rem' }}>Lugar de produccion</h4>
-                <p style={{ margin:'0 0 0.2rem', fontSize:'0.82rem', color:'#334155' }}><strong>{detalleRealizacion.lugar?.nombre || 'Sin nombre'}</strong></p>
-                <p style={{ margin:'0 0 0.6rem', fontSize:'0.78rem', color:'#64748b' }}>
-                  {detalleRealizacion.lugar?.municipio || 'Municipio'} - {detalleRealizacion.lugar?.departamento || 'Departamento'}
-                </p>
-
-                <div style={{ fontSize:'0.78rem', marginBottom:'0.6rem', color:'#334155' }}>
-                  Evaluados: <strong>{resumenDetalle.lotes_evaluados}</strong>/{resumenDetalle.total_lotes}
+            <div className="ti-split-layout">
+              
+              <aside className="ti-sidebar">
+                <div className="ti-sidebar-header">
+                  <h4>Lotes Asignados</h4>
+                  <span className="ti-progreso-badge">{resumenDetalle.lotes_evaluados}/{resumenDetalle.total_lotes}</span>
+                </div>
+                
+                <div className="ti-lotes-list">
+                  {(detalleRealizacion.lotes || []).map((lote) => {
+                    const nameFallback = lote.lote_codigo || lote.nombre || `Lote #${lote.lote_id}`;
+                    return (
+                      <button
+                        key={lote.lote_id}
+                        onClick={() => seleccionarLote(lote)}
+                        className={`ti-lote-btn ${loteActivo?.lote_id === lote.lote_id && modoVista === 'lotes' ? 'active' : ''} ${lote.evaluado ? 'evaluado' : ''}`}
+                      >
+                        <div className="ti-lote-info">
+                          <strong>{nameFallback}</strong>
+                          <span>{lote.evaluado ? '✅ Evaluado' : '🔸 Pendiente'}</span>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
 
-                <div style={{ display:'flex', flexDirection:'column', gap:'0.45rem' }}>
-                  {(detalleRealizacion.lotes || []).map((lote) => (
-                    <button
-                      key={lote.lote_id}
-                      onClick={() => seleccionarLote(lote)}
-                      style={{
-                        textAlign:'left', padding:'0.55rem 0.65rem', borderRadius:8,
-                        border: loteActivo?.lote_id === lote.lote_id ? '1.5px solid #3b4fa8' : '1px solid #e5e7eb',
-                        background: lote.evaluado ? '#eefbf3' : '#fff', cursor:'pointer',
-                      }}
-                    >
-                      <div style={{ fontSize:'0.8rem', fontWeight:700, color:'#1f2937' }}>
-                        {lote.lote_codigo || `Lote #${lote.lote_id}`}
-                      </div>
-                      <div style={{ fontSize:'0.74rem', color:'#64748b' }}>{lote.predio_nombre || 'Predio no registrado'}</div>
-                      <div style={{ fontSize:'0.72rem', color:lote.evaluado ? '#166534' : '#9a3412', marginTop:2 }}>
-                        {lote.evaluado ? 'Evaluado' : 'Pendiente'}
-                      </div>
-                    </button>
-                  ))}
+                <div className="ti-sidebar-footer">
+                  <button 
+                    className={`ti-btn-informe ${modoVista === 'final' ? 'active' : ''}`}
+                    disabled={!resumenDetalle.todos_evaluados && !esCompletada}
+                    onClick={() => setModoVista('final')}
+                  >
+                    <IcoDoc /> Redactar Informe Final
+                  </button>
+                  {!resumenDetalle.todos_evaluados && !esCompletada && (
+                    <p className="ti-help-text">Evalúa todos los lotes para habilitar el cierre.</p>
+                  )}
                 </div>
               </aside>
 
-              <div style={{ display:'flex', flexDirection:'column', gap:'1rem' }}>
-                <section style={{ border:'1px solid #e5e9f0', borderRadius:12, padding:'1rem' }}>
-                  <h4 style={{ margin:'0 0 0.65rem', color:'#1e2a4a', fontSize:'0.95rem' }}>
-                    Registro por lote: {loteActivo?.lote_codigo || `#${loteActivo?.lote_id || ''}`}
-                  </h4>
+              <main className="ti-main-area">
+                
+                {modoVista === 'lotes' && loteActivo && (
+                  <div className="ti-fade-in ti-form-container">
+                    <div className="ti-main-header">
+                      <h3>Conteo en campo: {nombreLoteSeguro}</h3>
+                      <p>Registra las métricas fitosanitarias de este sector.</p>
+                    </div>
 
-                  {!loteActivo ? (
-                    <p style={{ margin:0, color:'#6b7280', fontSize:'0.84rem' }}>Selecciona un lote para evaluarlo.</p>
-                  ) : (
-                    <>
-                      <div style={{ marginBottom:'0.8rem' }}>
-                        <label style={{ display:'block', fontSize:'0.8rem', fontWeight:600, color:'#374151', marginBottom:'0.3rem' }}>
-                          Total de plantas inspeccionadas *
-                        </label>
-                        <input
-                          type="number"
-                          min="1"
-                          value={formLote.total_plantas_inspeccionadas}
-                          onChange={(e) => setFormLote((p) => ({ ...p, total_plantas_inspeccionadas: e.target.value }))}
-                          style={{ width:'180px', borderRadius:8, border:'1.5px solid #d1d5db', padding:'0.45rem 0.6rem', fontSize:'0.84rem' }}
-                        />
-                        {erroresLote.total_plantas_inspeccionadas && (
-                          <p style={{ margin:'0.25rem 0 0', fontSize:'0.73rem', color:'#dc2626' }}>{erroresLote.total_plantas_inspeccionadas}</p>
-                        )}
+                    {loteActivo.evaluado && !esCompletada ? (
+                      <div className="ti-alert success">
+                        <IcoCheck /> 
+                        <div>
+                          <strong>Lote Evaluado Exitosamente</strong>
+                          <p>Los datos han sido guardados. Selecciona un lote pendiente en la lista para continuar.</p>
+                        </div>
                       </div>
+                    ) : (
+                      <form className="ti-form-conteo">
+                        
+                        <div className="ti-card-stepper">
+                          <div className="ti-stepper-info">
+                            <label>1. Total de plantas inspeccionadas *</label>
+                            <p>Muestra total del cultivo revisado.</p>
+                            {erroresLote.total_plantas_inspeccionadas && <span className="ti-error-text">{erroresLote.total_plantas_inspeccionadas}</span>}
+                          </div>
+                          <div className="ti-stepper-controls">
+                            <button type="button" onClick={() => cambiarTotalPlantas(-1)} disabled={loteActivo.evaluado}><IcoMinus/></button>
+                            <input 
+                              type="number" min="0" 
+                              value={formLote.total_plantas_inspeccionadas} 
+                              onChange={(e) => setFormLote(p => ({...p, total_plantas_inspeccionadas: Number(e.target.value)}))}
+                              disabled={loteActivo.evaluado}
+                            />
+                            <button type="button" className="plus" onClick={() => cambiarTotalPlantas(1)} disabled={loteActivo.evaluado}><IcoPlus/></button>
+                          </div>
+                        </div>
 
-                      <div style={{ display:'grid', gridTemplateColumns:'1fr auto', rowGap:'0.45rem', columnGap:'0.7rem', marginBottom:'0.75rem' }}>
-                        <div style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Plaga</div>
-                        <div style={{ fontSize:'0.78rem', fontWeight:700, color:'#374151' }}>Plantas afectadas</div>
-                        {formLote.plagas.map((plaga, idx) => (
-                          <Fragment key={`${plaga.plaga_nombre}-${idx}`}>
-                            <div style={{ fontSize:'0.8rem', color:'#334155', display:'flex', alignItems:'center' }}>{plaga.plaga_nombre}</div>
+                        <div className="ti-card-plagas">
+                          <div className="ti-plagas-header">
                             <div>
-                              <input
-                                type="number"
-                                min="0"
-                                value={plaga.plantas_afectadas}
-                                onChange={(e) => setPlagaValue(idx, e.target.value)}
-                                style={{ width:'120px', borderRadius:8, border:'1.5px solid #d1d5db', padding:'0.36rem 0.55rem', fontSize:'0.8rem' }}
-                              />
-                              {erroresLote[`plaga_${plaga.plaga_nombre}`] && (
-                                <p style={{ margin:'0.2rem 0 0', fontSize:'0.72rem', color:'#dc2626' }}>{erroresLote[`plaga_${plaga.plaga_nombre}`]}</p>
-                              )}
+                              <label>2. Registro de afectaciones</label>
+                              <p>Conteo individual por plaga detectada.</p>
                             </div>
-                          </Fragment>
-                        ))}
-                      </div>
+                            <span className={`ti-live-counter ${totalAfectacionesLive > formLote.total_plantas_inspeccionadas ? 'error' : ''}`}>
+                              Afectadas: {totalAfectacionesLive}
+                            </span>
+                          </div>
+                          
+                          <div className="ti-plagas-grid">
+                            {formLote.plagas.map((plaga, idx) => (
+                              <div key={idx} className="ti-plaga-row">
+                                <div className="ti-plaga-name">
+                                  <span>{plaga.plaga_nombre}</span>
+                                  {erroresLote[`plaga_${plaga.plaga_nombre}`] && <span className="ti-error-text">{erroresLote[`plaga_${plaga.plaga_nombre}`]}</span>}
+                                </div>
+                                <div className="ti-stepper-controls">
+                                  <button type="button" onClick={() => cambiarPlaga(idx, -1)} disabled={loteActivo.evaluado}><IcoMinus/></button>
+                                  <input 
+                                    type="number" min="0" 
+                                    value={plaga.plantas_afectadas} 
+                                    onChange={(e) => setPlagaManual(idx, e.target.value)}
+                                    disabled={loteActivo.evaluado}
+                                  />
+                                  <button type="button" className="plus" onClick={() => cambiarPlaga(idx, 1)} disabled={loteActivo.evaluado}><IcoPlus/></button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
 
-                      <div style={{ marginBottom:'0.75rem' }}>
-                        <label style={{ display:'block', fontSize:'0.8rem', fontWeight:600, color:'#374151', marginBottom:'0.3rem' }}>
-                          Observaciones del lote (opcional)
-                        </label>
-                        <textarea
-                          rows={3}
-                          value={formLote.observaciones_lote}
-                          onChange={(e) => setFormLote((p) => ({ ...p, observaciones_lote: e.target.value }))}
-                          style={{ width:'100%', borderRadius:8, border:'1.5px solid #d1d5db', padding:'0.55rem 0.7rem', fontSize:'0.82rem', resize:'vertical', boxSizing:'border-box', fontFamily:'inherit' }}
-                        />
-                      </div>
+                        <div className="ti-card-simple">
+                          <label>3. Observaciones del lote (opcional)</label>
+                          <textarea 
+                            rows="2" 
+                            placeholder="Anota particularidades de este cuadrante..."
+                            value={formLote.observaciones_lote}
+                            onChange={(e) => setFormLote(p => ({...p, observaciones_lote: e.target.value}))}
+                            disabled={loteActivo.evaluado}
+                          />
+                        </div>
 
-                      <button
-                        disabled={procesando}
-                        onClick={guardarLote}
-                        style={{
-                          display:'inline-flex', alignItems:'center', gap:'0.4rem',
-                          padding:'0.45rem 1rem', borderRadius:8, border:'none', cursor:'pointer',
-                          background:'#1d4ed8', color:'#fff', fontSize:'0.82rem', fontWeight:600,
-                          opacity: procesando ? 0.6 : 1,
-                        }}
-                      >
-                        <IcoCheck /> Guardar lote evaluado
-                      </button>
-                    </>
-                  )}
-                </section>
-
-                <section style={{ border:'1px solid #e5e9f0', borderRadius:12, padding:'1rem', background: resumenDetalle.todos_evaluados ? '#f7fff8' : '#fff8f2' }}>
-                  <h4 style={{ margin:'0 0 0.65rem', color:'#1e2a4a', fontSize:'0.95rem' }}>Finalizacion de la inspeccion</h4>
-                  {!resumenDetalle.todos_evaluados && (
-                    <p style={{ margin:'0 0 0.8rem', fontSize:'0.8rem', color:'#9a3412' }}>
-                      Para finalizar debes evaluar todos los lotes activos ({resumenDetalle.lotes_pendientes} pendientes).
-                    </p>
-                  )}
-
-                  <div style={{ display:'grid', gap:'0.75rem' }}>
-                    <div>
-                      <label style={{ display:'block', fontSize:'0.8rem', fontWeight:600, color:'#374151', marginBottom:'0.25rem' }}>Observaciones generales</label>
-                      <textarea
-                        rows={2}
-                        value={formCompletar.observaciones_generales}
-                        onChange={(e) => setFormCompletar((p) => ({ ...p, observaciones_generales: e.target.value }))}
-                        style={{ width:'100%', borderRadius:8, border:'1.5px solid #d1d5db', padding:'0.5rem 0.65rem', fontSize:'0.82rem', resize:'vertical', boxSizing:'border-box', fontFamily:'inherit' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display:'block', fontSize:'0.8rem', fontWeight:600, color:'#374151', marginBottom:'0.25rem' }}>Recomendaciones fitosanitarias</label>
-                      <textarea
-                        rows={2}
-                        value={formCompletar.recomendaciones}
-                        onChange={(e) => setFormCompletar((p) => ({ ...p, recomendaciones: e.target.value }))}
-                        style={{ width:'100%', borderRadius:8, border:'1.5px solid #d1d5db', padding:'0.5rem 0.65rem', fontSize:'0.82rem', resize:'vertical', boxSizing:'border-box', fontFamily:'inherit' }}
-                      />
-                    </div>
-
-                    <div>
-                      <label style={{ display:'block', fontSize:'0.8rem', fontWeight:600, color:'#374151', marginBottom:'0.25rem' }}>Concepto tecnico final *</label>
-                      <input
-                        value={formCompletar.concepto_tecnico}
-                        onChange={(e) => setFormCompletar((p) => ({ ...p, concepto_tecnico: e.target.value }))}
-                        placeholder="Ejemplo: Aprobado con control preventivo"
-                        style={{ width:'100%', borderRadius:8, border:`1.5px solid ${erroresCompletar.concepto_tecnico ? '#dc2626' : '#d1d5db'}`, padding:'0.5rem 0.65rem', fontSize:'0.82rem', boxSizing:'border-box' }}
-                      />
-                      {erroresCompletar.concepto_tecnico && (
-                        <p style={{ margin:'0.25rem 0 0', fontSize:'0.73rem', color:'#dc2626' }}>{erroresCompletar.concepto_tecnico}</p>
-                      )}
-                    </div>
+                        {!loteActivo.evaluado && (
+                          <div className="ti-form-actions">
+                            <button type="button" disabled={procesando} onClick={guardarLote} className="ti-btn-primary">
+                              <IcoCheck /> Guardar Conteo del Lote
+                            </button>
+                          </div>
+                        )}
+                      </form>
+                    )}
                   </div>
+                )}
 
-                  <div style={{ marginTop:'0.85rem', display:'flex', justifyContent:'flex-end' }}>
-                    <button
-                      disabled={procesando || !resumenDetalle.todos_evaluados}
-                      onClick={completarInspeccion}
-                      style={{
-                        display:'inline-flex', alignItems:'center', gap:'0.4rem',
-                        padding:'0.5rem 1.1rem', borderRadius:8, border:'none', cursor:'pointer',
-                        background: resumenDetalle.todos_evaluados ? '#2e7d52' : '#9ca3af', color:'#fff', fontSize:'0.84rem', fontWeight:700,
-                        opacity: procesando ? 0.6 : 1,
-                      }}
-                    >
-                      <IcoClip /> Confirmar finalizacion
-                    </button>
+                {modoVista === 'final' && (
+                  <div className="ti-fade-in ti-form-container">
+                    <div className="ti-main-header">
+                      <h3>Cierre y Concepto Técnico</h3>
+                      <p>Todos los lotes han sido evaluados. Redacta la conclusión final.</p>
+                    </div>
+
+                    {esCompletada ? (
+                      <div className="ti-report-success">
+                        <IcoCheck />
+                        <h4>Inspección Finalizada</h4>
+                        <div className="ti-report-grid">
+                          <div><strong>Concepto Técnico:</strong> {detalleRealizacion.inspeccion.concepto_tecnico}</div>
+                          <div><strong>Nivel de Riesgo:</strong> {informeFinal?.nivel_riesgo || 'N/A'}</div>
+                          <div className="full-w"><strong>Recomendaciones:</strong> {detalleRealizacion.inspeccion.recomendaciones}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <form className="ti-form-final">
+                        <div className="ti-input-group">
+                          <label>Observaciones Generales</label>
+                          <textarea rows="3" value={formCompletar.observaciones_generales} onChange={e => setFormCompletar(p => ({...p, observaciones_generales: e.target.value}))} />
+                        </div>
+                        <div className="ti-input-group">
+                          <label>Recomendaciones Fitosanitarias</label>
+                          <textarea rows="3" value={formCompletar.recomendaciones} onChange={e => setFormCompletar(p => ({...p, recomendaciones: e.target.value}))} />
+                        </div>
+                        <div className="ti-input-group">
+                          <label>Concepto Técnico Final *</label>
+                          <input type="text" className={erroresCompletar.concepto_tecnico ? 'error' : ''} placeholder="Ej. Aprobado con prevención" value={formCompletar.concepto_tecnico} onChange={e => setFormCompletar(p => ({...p, concepto_tecnico: e.target.value}))} />
+                          {erroresCompletar.concepto_tecnico && <span className="ti-error-text">{erroresCompletar.concepto_tecnico}</span>}
+                        </div>
+                        <div className="ti-form-actions">
+                          <button type="button" disabled={procesando} onClick={completarInspeccion} className="ti-btn-primary large">
+                            <IcoDoc /> Emitir y Cerrar Inspección
+                          </button>
+                        </div>
+                      </form>
+                    )}
                   </div>
-                </section>
-              </div>
+                )}
+
+              </main>
             </div>
           )}
         </Modal>
       )}
-    </section>
+
+{/* ── ESTILOS  (TAMAÑOS Y BOTONES CORREGIDOS) ── */}
+      <style>{`
+        .ti-dashboard-area { max-width: 1200px; margin: 0 auto; padding: 24px; font-family: system-ui, sans-serif; color: #334155; }
+        
+        .ti-toast { position: fixed; bottom: 24px; right: 24px; padding: 12px 20px; border-radius: 8px; display: flex; gap: 10px; align-items: center; font-weight: 500; z-index: 9999; animation: slideUp 0.3s ease; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
+        .ti-toast--ok { background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0; }
+        .ti-toast--error { background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca; }
+        @keyframes slideUp { from { transform: translateY(100%); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .ti-header-block { margin-bottom: 24px; }
+        .ti-header-block h2 { margin: 0 0 4px 0; font-size: 1.5rem; color: #0f172a; }
+        .ti-header-block p { margin: 0; color: #64748b; }
+        .ti-toolbar { display: flex; justify-content: space-between; margin-bottom: 16px; }
+        .ti-filters { display: flex; gap: 8px; background: #f1f5f9; padding: 4px; border-radius: 8px; }
+        .ti-btn-filter { background: transparent; border: none; padding: 6px 12px; border-radius: 6px; font-weight: 500; color: #64748b; cursor: pointer; transition: all 0.2s; }
+        .ti-btn-filter.active { background: white; color: #0f172a; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+        .ti-btn-outline { background: white; border: 1px solid #cbd5e1; padding: 6px 16px; border-radius: 6px; font-weight: 500; cursor: pointer; transition: border-color 0.15s, color 0.15s; }
+        .ti-btn-outline:hover { border-color: #94a3b8; color: #0f172a; }
+        
+        .ti-table-card { background: white; border: 1px solid #e2e8f0; border-radius: 12px; overflow: hidden; }
+        .ti-table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.88rem; }
+        .ti-table th { background: #f8fafc; padding: 12px 16px; color: #475569; border-bottom: 1px solid #e2e8f0; }
+        .ti-table td { padding: 12px 16px; border-bottom: 1px solid #f1f5f9; }
+        .ti-table tr:last-child td { border-bottom: none; }
+        .fw-bold { font-weight: 600; color: #0f172a; }
+        .text-muted { color: #64748b; }
+        .ti-badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+        .ti-badge--pendiente { background: #fff7ed; color: #ea580c; }
+        .ti-badge--en_proceso { background: #eff6ff; color: #2563eb; }
+        .ti-badge--completada { background: #f0fdf4; color: #16a34a; }
+        .ti-tag-lote { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px; }
+        .ti-btn-action { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: opacity 0.15s, filter 0.15s; }
+        .ti-btn-action svg { width: 14px; height: 14px; flex-shrink: 0; }
+        .ti-btn-action:hover { filter: brightness(0.93); }
+        .ti-btn-action.green { background: #22c55e; color: white; }
+        .ti-btn-action.outline { background: white; border-color: #cbd5e1; color: #334155; }
+
+        .ti-empty-state { padding: 40px; text-align: center; color: #64748b; font-weight: 500; display: flex; flex-direction: column; align-items: center; gap: 10px; }
+        .ti-empty-state.error { color: #dc2626; background: #fef2f2; }
+
+        /* MODAL CORREGIDO: MENOR TAMAÑO */
+        .ti-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .ti-modal { background: #f8fafc; width: 100%; max-width: 850px; height: 85vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.25); }
+        .ti-modal__header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: white; border-bottom: 1px solid #e2e8f0; }
+        .ti-modal__header h3 { margin: 0; font-size: 1.1rem; color: #0f172a; }
+        .ti-modal__close { background: none; border: none; cursor: pointer; color: #64748b; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: background 0.15s; }
+        .ti-modal__close:hover { background: #f1f5f9; color: #0f172a; }
+        .ti-modal__close svg { width: 18px; height: 18px; }
+        .ti-modal__body { flex: 1; display: flex; overflow: hidden; }
+
+        .ti-split-layout { display: flex; width: 100%; height: 100%; }
+        
+        .ti-sidebar { width: 280px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; }
+        .ti-sidebar-header { padding: 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
+        .ti-sidebar-header h4 { margin: 0; font-size: 0.95rem; color: #0f172a; }
+        .ti-progreso-badge { background: #e0f2fe; color: #0369a1; padding: 3px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 700; }
+        
+        .ti-lotes-list { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+        .ti-lote-btn { width: 100%; text-align: left; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px; border-radius: 8px; cursor: pointer; transition: all 0.2s; }
+        .ti-lote-btn:hover { border-color: #cbd5e1; }
+        .ti-lote-btn.active { background: #eff6ff; border-color: #3b82f6; box-shadow: 0 0 0 1px #3b82f6; }
+        .ti-lote-btn.evaluado { opacity: 0.7; border-color: #bbf7d0; background: #f0fdf4; }
+        .ti-lote-info { display: flex; justify-content: space-between; align-items: center; }
+        .ti-lote-info strong { color: #0f172a; font-size: 0.9rem; }
+        .ti-lote-info span { font-size: 0.7rem; font-weight: 600; color: #64748b; }
+        
+        .ti-sidebar-footer { padding: 16px; border-top: 1px solid #f1f5f9; background: #f8fafc; }
+        .ti-btn-informe { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; background: white; font-weight: 600; color: #334155; display: flex; justify-content: center; align-items: center; gap: 8px; cursor: pointer; transition: all 0.2s; font-size: 0.9rem; }
+        .ti-btn-informe svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .ti-btn-informe:not(:disabled):hover { border-color: #3b82f6; color: #2563eb; }
+        .ti-btn-informe.active { background: #2563eb; color: white; border-color: #2563eb; }
+        .ti-btn-informe:disabled { opacity: 0.5; cursor: not-allowed; }
+        .ti-help-text { margin: 6px 0 0 0; font-size: 0.7rem; color: #64748b; text-align: center; }
+
+        .ti-main-area { flex: 1; padding: 24px; overflow-y: auto; background: #f8fafc; display: flex; flex-direction: column; align-items: center; }
+        .ti-form-container { width: 100%; max-width: 500px; }
+        .ti-fade-in { animation: fadeIn 0.3s ease; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .ti-main-header { margin-bottom: 20px; }
+        .ti-main-header h3 { margin: 0 0 4px 0; font-size: 1.25rem; color: #0f172a; }
+        .ti-main-header p { margin: 0; color: #64748b; font-size: 0.9rem;}
+
+        .ti-form-conteo, .ti-form-final { display: flex; flex-direction: column; gap: 16px; }
+        .ti-card-stepper, .ti-card-plagas, .ti-card-simple { background: white; border: 1px solid #e2e8f0; padding: 16px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
+        .ti-card-stepper { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
+        
+        .ti-stepper-info label { font-size: 0.95rem; font-weight: 600; color: #0f172a; }
+        .ti-stepper-info p { margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b; }
+        
+        /* BOTONES +/- CORREGIDOS Y ESTRICTAMENTE PEQUEÑOS */
+        .ti-stepper-controls { display: inline-flex; align-items: center; justify-content: center; background: #f1f5f9; padding: 4px; border-radius: 8px; border: 1px solid #cbd5e1; height: 42px; width: max-content; max-width: 150px; box-sizing: border-box; gap: 6px; }
+        .ti-stepper-controls button { width: 32px !important; height: 32px !important; min-width: 32px !important; flex: 0 0 32px !important; border-radius: 6px; border: none; background: white; cursor: pointer; display: flex; align-items: center; justify-content: center; color: #475569; box-shadow: 0 1px 2px rgba(0,0,0,0.05); padding: 0; }
+        .ti-stepper-controls button svg { width: 16px; height: 16px; }
+        .ti-stepper-controls button.plus { background: #e0f2fe; color: #0284c7; }
+        
+        /* INPUT NUMÉRICO LIMPIO SIN FLECHAS Y TAMAÑO FIJO */
+        .ti-stepper-controls input { width: 45px !important; min-width: 45px !important; flex: 0 0 45px !important; text-align: center; font-size: 1.1rem; font-weight: 700; border: none; background: transparent; outline: none; color: #0f172a; padding: 0; margin: 0; }
+        .ti-stepper-controls input[type="number"]::-webkit-outer-spin-button,
+        .ti-stepper-controls input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+        .ti-stepper-controls input[type="number"] { -moz-appearance: textfield; }
+        .ti-stepper-controls button:disabled, .ti-stepper-controls input:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        .ti-plagas-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
+        .ti-plagas-header label { font-size: 0.95rem; font-weight: 600; color: #0f172a; }
+        .ti-plagas-header p { margin: 2px 0 0 0; font-size: 0.8rem; color: #64748b; }
+        .ti-live-counter { font-size: 0.8rem; font-weight: 600; color: #0284c7; background: #e0f2fe; padding: 3px 8px; border-radius: 12px; }
+        .ti-live-counter.error { background: #fef2f2; color: #dc2626; }
+        
+        .ti-plagas-grid { display: flex; flex-direction: column; gap: 8px; }
+        .ti-plaga-row { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; padding: 8px 12px; border-radius: 8px; border: 1px solid #e2e8f0; }
+        .ti-plaga-name { display: flex; flex-direction: column; font-weight: 500; color: #334155; font-size: 0.9rem; }
+        .ti-error-text { font-size: 0.75rem; color: #dc2626; font-weight: 600; margin-top: 2px; }
+
+        .ti-card-simple label { display: block; font-size: 0.95rem; font-weight: 600; margin-bottom: 8px; color: #0f172a; }
+        .ti-card-simple textarea, .ti-input-group textarea, .ti-input-group input { width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 8px; font-family: inherit; font-size: 0.9rem; outline: none; transition: border 0.2s; box-sizing: border-box; resize: vertical; }
+        .ti-card-simple textarea:focus, .ti-input-group textarea:focus, .ti-input-group input:focus { border-color: #3b82f6; }
+        .ti-input-group input.error { border-color: #dc2626; }
+
+        .ti-form-actions { display: flex; justify-content: flex-end; padding-top: 8px; }
+        .ti-btn-primary { background: #22c55e; color: white; border: none; padding: 10px 20px; border-radius: 8px; font-weight: 600; font-size: 0.9rem; cursor: pointer; display: inline-flex; align-items: center; gap: 8px; transition: background 0.2s; width: auto; justify-content: center; }
+        .ti-btn-primary svg { width: 16px; height: 16px; flex-shrink: 0; }
+        .ti-btn-primary:hover { background: #16a34a; }
+        .ti-btn-primary.large { background: #2563eb; }
+        .ti-btn-primary.large:hover { background: #1d4ed8; }
+        .ti-btn-primary:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        .ti-alert.success { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 16px; border-radius: 12px; display: flex; gap: 12px; color: #15803d; align-items: flex-start; }
+        .ti-alert.success svg { width: 20px; height: 20px; flex-shrink: 0; margin-top: 2px; }
+        .ti-alert.success strong { font-size: 1rem; display: block; margin-bottom: 2px; }
+        .ti-alert.success p { margin: 0; font-size: 0.85rem; color: #166534; }
+
+        .ti-report-success { background: white; border: 1px solid #e2e8f0; padding: 24px; border-radius: 12px; text-align: center; }
+        .ti-report-success svg { width: 36px; height: 36px; color: #22c55e; margin-bottom: 12px; }
+        .ti-report-success h4 { margin: 0 0 16px 0; font-size: 1.15rem; color: #0f172a; }
+        .ti-report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #f1f5f9; }
+        .ti-report-grid .full-w { grid-column: span 2; }
+        .ti-report-grid strong { display: block; color: #64748b; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 4px; }
+
+        .ti-input-group { display: flex; flex-direction: column; gap: 6px; }
+        .ti-input-group label { font-weight: 600; font-size: 0.9rem; color: #0f172a; }
+      `}</style>
+    </div>
   )
 }

@@ -36,6 +36,11 @@ const calcularNivelRiesgo = (porcentajeTotal) => {
 
 const normalizarPlaga = (value) => String(value || '').trim().slice(0, 180);
 
+const logAccionTecnico = (accion, tecnicoId, inspeccionId, detalle = null) => {
+    const texto = `TECNICO: ${accion} | tecnico=${tecnicoId} | inspeccion=${inspeccionId}` + (detalle ? ` | detalle=${detalle}` : '')
+    console.info(texto)
+};
+
 const obtenerTecnicoConMenorCarga = async (authHeader, departamento, municipio) => {
     try {
         const params = new URLSearchParams();
@@ -528,7 +533,7 @@ const getInspeccionesTecnico = async (req, res) => {
         query += ' AND i.estado = ?';
         params.push(estado);
     } else {
-        query += " AND i.estado IN ('pendiente', 'en_proceso')";
+        query += " AND i.estado IN ('pendiente', 'en_proceso', 'sin_lotes_inspeccionables')";
     }
 
     query += ' ORDER BY COALESCE(i.fecha_programada, DATE(i.fecha_solicitud)) ASC, i.fecha_solicitud ASC';
@@ -543,6 +548,120 @@ const getInspeccionesTecnico = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Error al obtener inspecciones' });
+    }
+};
+
+const getTecnicoDashboard = async (req, res) => {
+    const asistente_id = req.user.id;
+    const tecnicoDep = req.user.departamento || null;
+    const tecnicoMun = req.user.municipio || null;
+
+    try {
+        const inspecciones = await queryAsync(
+            `SELECT id, estado, porcentaje_infeccion_total, nivel_riesgo, fecha_solicitud, fecha_programada, fecha_cierre, observaciones_generales, recomendaciones, concepto_tecnico, lote_codigo, lugar_nombre
+             FROM inspecciones
+             WHERE (asistente_id = ? OR (asistente_id IS NULL AND departamento = ? AND municipio = ?))`,
+            [asistente_id, tecnicoDep, tecnicoMun]
+        );
+
+        const counts = inspecciones.reduce((acc, item) => {
+            acc.total += 1;
+            acc[item.estado] = (acc[item.estado] || 0) + 1;
+            if (item.estado === 'completada') {
+                acc.completadas += 1;
+                if (Number.isFinite(Number(item.porcentaje_infeccion_total))) {
+                    acc.riesgos.push(Number(item.porcentaje_infeccion_total));
+                }
+            }
+            return acc;
+        }, { total: 0, pendiente: 0, en_proceso: 0, completada: 0, sin_lotes_inspeccionables: 0, riesgos: [] });
+
+        const porcentaje_completadas = counts.total === 0 ? 0 : Number(((counts.completadas / counts.total) * 100).toFixed(0));
+        const promedio_riesgo = counts.riesgos.length === 0 ? 0 : Number((counts.riesgos.reduce((sum, value) => sum + value, 0) / counts.riesgos.length).toFixed(2));
+        const nivel_riesgo_promedio = promedio_riesgo <= 5 ? 'bajo' : promedio_riesgo <= 15 ? 'medio' : 'alto';
+
+        const lotesEvaluados = await queryAsync(
+            `SELECT COUNT(*) AS total
+             FROM inspeccion_lotes il
+             JOIN inspecciones i ON i.id = il.inspeccion_id
+             WHERE (i.asistente_id = ? OR (i.asistente_id IS NULL AND i.departamento = ? AND i.municipio = ?))
+               AND il.fecha_evaluacion IS NOT NULL`,
+            [asistente_id, tecnicoDep, tecnicoMun]
+        );
+
+        const plagaRecurrenteRows = await queryAsync(
+            `SELECT p.plaga_nombre, COUNT(*) AS apariciones, SUM(p.plantas_afectadas) AS total_afectadas
+             FROM inspeccion_lote_plagas p
+             JOIN inspeccion_lotes il ON il.id = p.inspeccion_lote_id
+             JOIN inspecciones i ON i.id = il.inspeccion_id
+             WHERE (i.asistente_id = ? OR (i.asistente_id IS NULL AND i.departamento = ? AND i.municipio = ?))
+             GROUP BY p.plaga_nombre
+             ORDER BY apariciones DESC, total_afectadas DESC
+             LIMIT 1`,
+            [asistente_id, tecnicoDep, tecnicoMun]
+        );
+
+        const plaga_recurrente = plagaRecurrenteRows[0] || null;
+
+        const nuevasAsignaciones = await queryAsync(
+            `SELECT id, estado, lote_codigo, lugar_nombre, fecha_solicitud
+             FROM inspecciones
+             WHERE (asistente_id = ? OR (asistente_id IS NULL AND departamento = ? AND municipio = ?))
+               AND fecha_solicitud >= DATE_SUB(NOW(), INTERVAL 3 DAY)
+             ORDER BY fecha_solicitud DESC
+             LIMIT 5`,
+            [asistente_id, tecnicoDep, tecnicoMun]
+        );
+
+        const proximasVencer = await queryAsync(
+            `SELECT id, estado, lote_codigo, lugar_nombre, fecha_programada
+             FROM inspecciones
+             WHERE (asistente_id = ? OR (asistente_id IS NULL AND departamento = ? AND municipio = ?))
+               AND estado IN ('pendiente', 'en_proceso')
+               AND fecha_programada IS NOT NULL
+               AND fecha_programada <= DATE_ADD(CURDATE(), INTERVAL 3 DAY)
+             ORDER BY fecha_programada ASC
+             LIMIT 5`,
+            [asistente_id, tecnicoDep, tecnicoMun]
+        );
+
+        const recientesCompletadas = await queryAsync(
+            `SELECT id, estado, lote_codigo, lugar_nombre, fecha_cierre
+             FROM inspecciones
+             WHERE (asistente_id = ? OR (asistente_id IS NULL AND departamento = ? AND municipio = ?))
+               AND estado IN ('completada', 'sin_lotes_inspeccionables')
+               AND fecha_cierre >= DATE_SUB(NOW(), INTERVAL 7 DAY)
+             ORDER BY fecha_cierre DESC
+             LIMIT 5`,
+            [asistente_id, tecnicoDep, tecnicoMun]
+        );
+
+        res.json({
+            metrics: {
+                total: counts.total,
+                pendientes: counts.pendiente,
+                en_proceso: counts.en_proceso,
+                completadas: counts.completada,
+                sin_lotes_inspeccionables: counts.sin_lotes_inspeccionables,
+                porcentaje_completadas,
+                promedio_porcentaje_infeccion: promedio_riesgo,
+                nivel_riesgo_promedio,
+                lotes_evaluados: Number(lotesEvaluados?.[0]?.total || 0),
+                plaga_recurrente: plaga_recurrente ? {
+                    nombre: plaga_recurrente.plaga_nombre,
+                    apariciones: Number(plaga_recurrente.apariciones || 0),
+                    total_afectadas: Number(plaga_recurrente.total_afectadas || 0),
+                } : null,
+            },
+            notifications: {
+                nuevas_asignaciones: nuevasAsignaciones,
+                proximas_vencer: proximasVencer,
+                recientes_completadas: recientesCompletadas,
+            },
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error al obtener métricas del tablero técnico' });
     }
 };
 
@@ -567,6 +686,16 @@ const getDetalleRealizacion = async (req, res) => {
         const evaluados = detalle.lotes.filter((l) => l.evaluado).length;
         const plagasSugeridas = await getPlagasSugeridasPorInspeccion(detalle.lotes);
 
+        let informe = null;
+        try {
+            if (inspeccion.informe_json) {
+                informe = JSON.parse(inspeccion.informe_json);
+            }
+        } catch (parseError) {
+            console.warn('No se pudo parsear informe_json para inspeccion', inspeccionId);
+            informe = null;
+        }
+
         res.json({
             inspeccion: {
                 id: inspeccion.id,
@@ -588,6 +717,7 @@ const getDetalleRealizacion = async (req, res) => {
                 todos_evaluados: total > 0 && total === evaluados,
             },
             plagas_sugeridas: plagasSugeridas,
+            informe,
         });
     } catch (err) {
         console.error(err);
@@ -609,6 +739,32 @@ const iniciarInspeccion = async (req, res) => {
         const insp = await verificarInspeccionTecnico(id, asistente_id, tecnicoDep, tecnicoMun);
         if (!insp) return res.status(404).json({ message: 'Inspeccion no encontrada' });
 
+        if (insp.estado === 'sin_lotes_inspeccionables') {
+            return res.status(400).json({ message: 'Esta inspección ya fue marcada como sin lotes inspeccionables', estado: insp.estado });
+        }
+
+        const detalle = await sincronizarLotesInspeccion(insp, req.headers.authorization);
+        if (detalle.lotes.length === 0) {
+            const motivo = 'No hay lotes activos en el lugar de producción para iniciar esta inspección.';
+            const observaciones = insp.observaciones_generales
+                ? `${insp.observaciones_generales} | ${motivo}`
+                : motivo;
+
+            await queryAsync(
+                `UPDATE inspecciones
+                 SET estado = 'sin_lotes_inspeccionables', fecha_cierre = NOW(), observaciones_generales = ?
+                 WHERE id = ?`,
+                [observaciones, id]
+            );
+
+            logAccionTecnico('marca_sin_lotes_inspeccionables', asistente_id, id, motivo);
+            return res.status(400).json({
+                message: motivo,
+                estado: 'sin_lotes_inspeccionables',
+                motivo,
+            });
+        }
+
         if (insp.estado !== 'pendiente') {
             return res.status(400).json({ message: `No se puede iniciar: estado actual es '${insp.estado}'` });
         }
@@ -620,6 +776,7 @@ const iniciarInspeccion = async (req, res) => {
             [id]
         );
 
+        logAccionTecnico('inicia_inspeccion', asistente_id, id);
         res.json({ message: 'Inspeccion iniciada', id, estado: 'en_proceso' });
     } catch (err) {
         console.error(err);
@@ -885,6 +1042,7 @@ module.exports = {
     getMisSolicitudes,
     getDetalleSolicitud,
     getInspeccionesTecnico,
+    getTecnicoDashboard,
     getDetalleRealizacion,
     iniciarInspeccion,
     guardarEvaluacionLote,

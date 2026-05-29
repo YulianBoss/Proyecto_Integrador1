@@ -70,6 +70,7 @@ export const inspeccionesAPI = {
 
 export const tecnicoAPI = {
   misInspecciones: (params) => axios.get(`${INSPECTION_URL}/api/inspections/tecnico/mis-inspecciones`, { headers: getHeaders(), params }),
+  dashboardMetrics: () => axios.get(`${INSPECTION_URL}/api/inspections/tecnico/dashboard`, { headers: getHeaders() }),
   detalleRealizacion: (id) => axios.get(`${INSPECTION_URL}/api/inspections/${id}/realizacion`, { headers: getHeaders() }),
   evaluarLote: (id, loteId, data) => axios.put(`${INSPECTION_URL}/api/inspections/${id}/lotes/${loteId}/evaluar`, data, { headers: getHeaders() }),
   iniciar:         (id)     => axios.patch(`${INSPECTION_URL}/api/inspections/${id}/iniciar`, {}, { headers: getHeaders() }),
