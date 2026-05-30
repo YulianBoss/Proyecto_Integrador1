@@ -14,7 +14,7 @@ const RIESGOS = [
     dot: '#16a34a',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M12 22s8-4 8-10V5l-8-2-8 2v7c0 6 8 10 8 10z"/>
+        <path d="M12 22s8-4 8-10V5l-8-2-8 2v7c0 6 8 10 8 10z" />
       </svg>
     ),
   },
@@ -29,8 +29,8 @@ const RIESGOS = [
     dot: '#f59e0b',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/>
-        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+        <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+        <line x1="12" y1="9" x2="12" y2="13" /><line x1="12" y1="17" x2="12.01" y2="17" />
       </svg>
     ),
   },
@@ -45,8 +45,8 @@ const RIESGOS = [
     dot: '#f97316',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        <circle cx="12" cy="12" r="10" />
+        <line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
     ),
   },
@@ -61,8 +61,8 @@ const RIESGOS = [
     dot: '#ef4444',
     icon: (
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-        <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2"/>
-        <line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+        <polygon points="7.86 2 16.14 2 22 7.86 22 16.14 16.14 22 7.86 22 2 16.14 2 7.86 7.86 2" />
+        <line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
       </svg>
     ),
   },
@@ -90,7 +90,7 @@ function CircularProgress({ pct }) {
   const r = 36
   const circ = 2 * Math.PI * r
   const offset = circ - (pct / 100) * circ
-  const color = pct < 50 ? '#f59e0b' : pct < 75 ? '#3b82f6' : '#16a34a'
+  const color = pct < 50 ? '#f59e0b' : pct < 75 ? '#045e54' : '#16a34a'
   return (
     <svg width="90" height="90" viewBox="0 0 90 90">
       <circle cx="45" cy="45" r={r} fill="none" stroke="#e2e8f0" strokeWidth="7" />
@@ -110,61 +110,61 @@ function CircularProgress({ pct }) {
 /* ── icons ── */
 const IconBug = () => (
   <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M8 2l1.5 1.5"/><path d="M14.5 3.5L16 2"/>
-    <path d="M9 9c0-1.1.9-2 2-2h2a2 2 0 012 2v6a5 5 0 01-10 0V9z"/>
-    <path d="M5 9H3"/><path d="M21 9h-2"/><path d="M5 15H3"/><path d="M21 15h-2"/>
-    <path d="M7 21c0-2 .5-3 3-3h4c2.5 0 3 1 3 3"/>
+    <path d="M8 2l1.5 1.5" /><path d="M14.5 3.5L16 2" />
+    <path d="M9 9c0-1.1.9-2 2-2h2a2 2 0 012 2v6a5 5 0 01-10 0V9z" />
+    <path d="M5 9H3" /><path d="M21 9h-2" /><path d="M5 15H3" /><path d="M21 15h-2" />
+    <path d="M7 21c0-2 .5-3 3-3h4c2.5 0 3 1 3 3" />
   </svg>
 )
 const IconTag = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z"/>
-    <line x1="7" y1="7" x2="7.01" y2="7"/>
+    <path d="M20.59 13.41l-7.17 7.17a2 2 0 01-2.83 0L2 12V2h10l8.59 8.59a2 2 0 010 2.82z" />
+    <line x1="7" y1="7" x2="7.01" y2="7" />
   </svg>
 )
 const IconFlask = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 3h6l2 7H7L9 3z"/><path d="M7 10l-4 9a2 2 0 001.8 2.8h14.4A2 2 0 0021 19l-4-9"/>
-    <line x1="12" y1="3" x2="12" y2="10"/>
+    <path d="M9 3h6l2 7H7L9 3z" /><path d="M7 10l-4 9a2 2 0 001.8 2.8h14.4A2 2 0 0021 19l-4-9" />
+    <line x1="12" y1="3" x2="12" y2="10" />
   </svg>
 )
 const IconLeaf = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M17 8C8 10 5.9 16.17 3.82 21.34.75 18.57 1 8 7 5c3-1.5 6-1 9 0z"/>
-    <path d="M17 8c-.5 5-3 8.5-6 12"/>
+    <path d="M17 8C8 10 5.9 16.17 3.82 21.34.75 18.57 1 8 7 5c3-1.5 6-1 9 0z" />
+    <path d="M17 8c-.5 5-3 8.5-6 12" />
   </svg>
 )
 const IconClipboard = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2"/>
-    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"/>
+    <path d="M16 4h2a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2V6a2 2 0 012-2h2" />
+    <rect x="8" y="2" width="8" height="4" rx="1" ry="1" />
   </svg>
 )
 const IconSearch = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+    <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
   </svg>
 )
 const IconSave = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/>
-    <polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/>
+    <path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" />
+    <polyline points="17 21 17 13 7 13 7 21" /><polyline points="7 3 7 8 15 8" />
   </svg>
 )
 const IconBack = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/>
+    <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
   </svg>
 )
 const IconInfo = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/>
+    <circle cx="12" cy="12" r="10" /><line x1="12" y1="16" x2="12" y2="12" /><line x1="12" y1="8" x2="12.01" y2="8" />
   </svg>
 )
 const IconLamp = () => (
   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-    <path d="M9 18h6"/><path d="M10 22h4"/>
-    <path d="M12 2a7 7 0 017 7c0 2.38-1.19 4.47-3 5.74V17H8v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 017-7z"/>
+    <path d="M9 18h6" /><path d="M10 22h4" />
+    <path d="M12 2a7 7 0 017 7c0 2.38-1.19 4.47-3 5.74V17H8v-2.26C6.19 13.47 5 11.38 5 9a7 7 0 017-7z" />
   </svg>
 )
 
@@ -286,19 +286,6 @@ export default function AdminPlagasCrear() {
           <div>
             <h1 className="pc-title">Nueva Plaga</h1>
             <p className="pc-subtitle">Registra información biológica y asocia los cultivos afectados.</p>
-          </div>
-          <div className="pc-header-actions">
-            <button className="pc-btn-back" onClick={() => navigate(-1)}>
-              <IconBack /> Volver
-            </button>
-            <button
-              className="pc-btn-save"
-              disabled={saving || loadingEspecies}
-              onClick={crearPlaga}
-            >
-              <IconSave />
-              {saving ? 'Guardando...' : 'Guardar Plaga'}
-            </button>
           </div>
         </div>
       </div>
@@ -443,13 +430,6 @@ export default function AdminPlagasCrear() {
                           }))
                         }
                       />
-                      {checked && (
-                        <span className="pc-cultivo-check">
-                          <svg width="11" height="11" viewBox="0 0 12 12" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="2 6 5 9 10 3"/>
-                          </svg>
-                        </span>
-                      )}
                       <span>{e.nombre}</span>
                     </label>
                   )
@@ -488,8 +468,8 @@ export default function AdminPlagasCrear() {
                 >
                   Limpiar todo
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/>
-                    <path d="M9 6V4h6v2"/>
+                    <polyline points="3 6 5 6 21 6" /><path d="M19 6l-1 14H6L5 6" /><path d="M10 11v6" /><path d="M14 11v6" />
+                    <path d="M9 6V4h6v2" />
                   </svg>
                 </button>
               </div>
@@ -646,9 +626,9 @@ export default function AdminPlagasCrear() {
         .pc-title-row { display: flex; align-items: center; gap: 16px; margin-bottom: 28px; }
         .pc-title-icon {
           width: 52px; height: 52px; border-radius: 14px;
-          background: linear-gradient(135deg, #e0f2fe, #bae6fd);
+          background: #ecfdf5;
           display: flex; align-items: center; justify-content: center;
-          color: #0369a1; flex-shrink: 0;
+          color: #045e54; flex-shrink: 0;
         }
         .pc-title { font-size: 1.6rem; font-weight: 700; color: #0f172a; margin: 0; }
         .pc-subtitle { font-size: 0.87rem; color: #64748b; margin: 4px 0 0; }
@@ -667,14 +647,14 @@ export default function AdminPlagasCrear() {
           display: flex; align-items: center; gap: 7px;
           padding: 9px 20px; border-radius: 9px;
           border: none;
-          background: linear-gradient(135deg, #1e3a8a, #1d4ed8);
+          background: #045e54;
           color: #fff; font-size: 0.87rem; font-weight: 700;
           cursor: pointer; transition: all 0.22s;
-          box-shadow: 0 4px 12px rgba(29,78,216,0.25); font-family: inherit;
+          box-shadow: 0 4px 12px rgba(4,94,84,0.15); font-family: inherit;
         }
         .pc-btn-save:hover:not(:disabled) {
-          background: linear-gradient(135deg, #1e3a8a, #2563eb);
-          transform: translateY(-1px); box-shadow: 0 8px 20px rgba(29,78,216,0.3);
+          background: #03423b;
+          transform: translateY(-1px); box-shadow: 0 8px 20px rgba(4,94,84,0.25);
         }
         .pc-btn-save:disabled { background: #94a3b8; box-shadow: none; cursor: not-allowed; }
         .pc-btn-cancel {
@@ -697,7 +677,7 @@ export default function AdminPlagasCrear() {
         .pc-section-head { display: flex; align-items: flex-start; gap: 14px; margin-bottom: 22px; }
         .pc-section-num {
           min-width: 28px; height: 28px; border-radius: 50%;
-          background: linear-gradient(135deg, #1d4ed8, #3b82f6);
+          background: #045e54;
           color: #fff; font-size: 0.8rem; font-weight: 700;
           display: flex; align-items: center; justify-content: center;
           flex-shrink: 0; margin-top: 2px;
@@ -725,7 +705,7 @@ export default function AdminPlagasCrear() {
           transition: border-color 0.2s, box-shadow 0.2s; font-family: inherit;
           outline: none;
         }
-        .pc-input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+        .pc-input:focus { border-color: #045e54; box-shadow: 0 0 0 3px rgba(4,94,84,0.1); }
         .pc-input--error { border-color: #ef4444; background: #fef2f2; }
         .pc-textarea { resize: vertical; min-height: 110px; }
         .pc-char-count { font-size: 0.75rem; color: #94a3b8; text-align: right; margin-top: 4px; }
@@ -755,7 +735,7 @@ export default function AdminPlagasCrear() {
           padding: 9px 13px; background: #fff; margin-bottom: 12px;
           transition: border-color 0.2s, box-shadow 0.2s;
         }
-        .pc-search-box:focus-within { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.12); }
+        .pc-search-box:focus-within { border-color: #045e54; box-shadow: 0 0 0 3px rgba(4,94,84,0.1); }
         .pc-search-box svg { color: #94a3b8; flex-shrink: 0; }
         .pc-search-input { border: none; outline: none; font-size: 0.87rem; color: #0f172a; background: transparent; font-family: inherit; width: 100%; }
         .pc-search-input::placeholder { color: #94a3b8; }
@@ -775,12 +755,12 @@ export default function AdminPlagasCrear() {
           transition: background 0.15s; user-select: none;
           position: relative;
         }
-        .pc-cultivo-item input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: #1d4ed8; }
+        .pc-cultivo-item input[type=checkbox] { width: 15px; height: 15px; cursor: pointer; accent-color: #045e54; }
         .pc-cultivo-item:hover { background: #e2e8f0; }
-        .pc-cultivo-item--checked { background: #dbeafe; color: #1e40af; font-weight: 600; }
+        .pc-cultivo-item--checked { background: #ecfdf5; color: #045e54; font-weight: 600; }
         .pc-cultivo-check {
           display: inline-flex; align-items: center; justify-content: center;
-          width: 15px; height: 15px; background: #1d4ed8;
+          width: 15px; height: 15px; background: #045e54;
           border-radius: 3px; flex-shrink: 0;
         }
         .pc-loading { font-size: 0.82rem; color: #64748b; grid-column: 1/-1; padding: 10px; text-align: center; }
@@ -791,16 +771,16 @@ export default function AdminPlagasCrear() {
           margin-top: 12px; display: flex; align-items: center;
           gap: 10px; flex-wrap: wrap;
         }
-        .pc-selected-count { font-size: 0.8rem; font-weight: 700; color: #1e40af; white-space: nowrap; }
+        .pc-selected-count { font-size: 0.8rem; font-weight: 700; color: #045e54; white-space: nowrap; }
         .pc-tags { display: flex; gap: 7px; flex-wrap: wrap; }
         .pc-tag {
           display: inline-flex; align-items: center; gap: 5px;
-          background: #eff6ff; border: 1px solid #bfdbfe;
-          color: #1d4ed8; font-size: 0.78rem; font-weight: 600;
+          background: #ecfdf5; border: 1px solid #a7f3d0;
+          color: #045e54; font-size: 0.78rem; font-weight: 600;
           padding: 3px 9px; border-radius: 20px;
         }
         .pc-tag-remove {
-          background: none; border: none; color: #3b82f6;
+          background: none; border: none; color: #10b981;
           cursor: pointer; font-size: 1rem; line-height: 1;
           padding: 0; margin-left: 2px; font-family: inherit;
           transition: color 0.15s;
