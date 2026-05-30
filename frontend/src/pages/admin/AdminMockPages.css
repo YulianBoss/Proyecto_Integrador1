@@ -55,6 +55,10 @@
 .mock-table th {
   color: #334155;
   font-size: 0.75rem;
+  position: sticky;
+  top: 0;
+  background: #ffffff;
+  z-index: 1;
 }
 
 .mock-table td {

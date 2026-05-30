@@ -161,33 +161,58 @@ const getLotsByProduction = (req, res) => {
 // ─────────────────────────────────────────────────────────────
 const getLoteById = (req, res) => {
     const { id } = req.params;
-    const productor_id = req.user.id;
+    const { id: userId, rol } = req.user;
 
-    db.query(
-        `SELECT l.*, p.nombre_identificacion AS predio_nombre,
-            p.departamento AS predio_departamento,
-            p.municipio AS predio_municipio
+    let query = `
+        SELECT l.*,
+            COALESCE(p.nombre_identificacion, (
+                SELECT pp.nombre_identificacion
+                FROM lugar_predios lp
+                JOIN predios_produccion pp ON pp.id = lp.predio_id
+                WHERE lp.lugar_produccion_id = l.lugar_produccion_id AND lp.es_principal = 1
+                LIMIT 1
+            )) AS predio_nombre,
+            COALESCE(p.departamento, (
+                SELECT pp.departamento
+                FROM lugar_predios lp
+                JOIN predios_produccion pp ON pp.id = lp.predio_id
+                WHERE lp.lugar_produccion_id = l.lugar_produccion_id AND lp.es_principal = 1
+                LIMIT 1
+            )) AS predio_departamento,
+            COALESCE(p.municipio, (
+                SELECT pp.municipio
+                FROM lugar_predios lp
+                JOIN predios_produccion pp ON pp.id = lp.predio_id
+                WHERE lp.lugar_produccion_id = l.lugar_produccion_id AND lp.es_principal = 1
+                LIMIT 1
+            )) AS predio_municipio
          FROM lotes l
          LEFT JOIN predios_produccion p ON p.id = l.predio_id
          JOIN lugares_produccion lp ON lp.id = l.lugar_produccion_id
-         WHERE l.id = ? AND lp.productor_id = ?`,
-        [id, productor_id],
-        (err, results) => {
-            if (err) { console.error(err); return res.status(500).json({ message: 'Error del servidor' }); }
-            if (results.length === 0) return res.status(404).json({ message: 'Lote no encontrado' });
+         WHERE l.id = ?`;
+    
+    const params = [id];
 
-            const lote = results[0];
+    if (rol === 'productor') {
+        query += ` AND lp.productor_id = ?`;
+        params.push(userId);
+    }
 
-            db.query(
-                `SELECT * FROM historial_estado_lote WHERE lote_id = ? ORDER BY fecha_cambio DESC`,
-                [id],
-                (err, historial) => {
-                    if (err) { console.error(err); return res.status(500).json({ message: 'Error al obtener historial' }); }
-                    res.json({ ...lote, historial });
-                }
-            );
-        }
-    );
+    db.query(query, params, (err, results) => {
+        if (err) { console.error(err); return res.status(500).json({ message: 'Error del servidor' }); }
+        if (results.length === 0) return res.status(404).json({ message: 'Lote no encontrado' });
+
+        const lote = results[0];
+
+        db.query(
+            `SELECT * FROM historial_estado_lote WHERE lote_id = ? ORDER BY fecha_cambio DESC`,
+            [id],
+            (err, historial) => {
+                if (err) { console.error(err); return res.status(500).json({ message: 'Error al obtener historial' }); }
+                res.json({ ...lote, historial });
+            }
+        );
+    });
 };
 
 // ─────────────────────────────────────────────────────────────

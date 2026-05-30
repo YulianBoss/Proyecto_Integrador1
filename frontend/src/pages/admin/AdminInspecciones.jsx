@@ -74,7 +74,7 @@ export default function AdminInspecciones() {
   const planillaTecnicos = useMemo(() => {
     return tecnicos.map(tec => {
       // Buscamos todas las inspecciones asignadas a este técnico
-      const susInsp = inspecciones.filter(i => i.tecnico_id === tec.id)
+      const susInsp = inspecciones.filter(i => i.asistente_id === tec.id)
       
       const pendientes = susInsp.filter(i => i.estado === 'pendiente').length
       const en_proceso = susInsp.filter(i => i.estado === 'en_proceso').length
@@ -148,22 +148,21 @@ export default function AdminInspecciones() {
 
       <header>
         <h2>Supervisión General del Sistema</h2>
-        <p>Módulo de auditoría fitosanitaria y seguimiento operativo de Asistentes Técnicos (Cumplimiento de Integridad RF-08).</p>
+        <p>Módulo de auditoría fitosanitaria y seguimiento operativo de Asistentes Técnicos.</p>
       </header>
 
-      {/* Navegación por Pestañas */}
       <div className="ai-header-tabs">
         <button 
           className={`ai-tab-btn ${vistaActual === 'inspecciones' ? 'active' : ''}`}
           onClick={() => setVistaActual('inspecciones')}
         >
-          🔍 Consulta de Inspecciones
+          Consulta de Inspecciones
         </button>
         <button 
           className={`ai-tab-btn ${vistaActual === 'tecnicos' ? 'active' : ''}`}
           onClick={() => setVistaActual('tecnicos')}
         >
-          📋 Carga Operativa de Técnicos
+          Carga Operativa de Técnicos
         </button>
       </div>
 
@@ -232,10 +231,15 @@ export default function AdminInspecciones() {
                       listaFiltrada.map((item) => (
                         <tr key={item.id}>
                           <td><strong>#{item.id}</strong></td>
-                          <td>{item.productor_nombre || 'Sin asignar'}</td>
+                          <td>{item.productor_nombre || <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Sin asignar</span>}</td>
                           <td>
-                            <div style={{ fontWeight: '500' }}>{item.predio_nombre || 'Predio NA'}</div>
-                            <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{item.lugar_nombre || 'Lugar NA'}</div>
+                            <div style={{ fontWeight: '500' }}>
+                              {item.predio_nombre || item.lugar_nombre || 
+                                <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>Sin ubicación</span>}
+                            </div>
+                            {item.lugar_nombre && item.predio_nombre && item.lugar_nombre !== item.predio_nombre && (
+                              <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{item.lugar_nombre}</div>
+                            )}
                           </td>
                           <td>{item.tecnico_nombre || 'Sin asignar'}</td>
                           <td>{fmtFecha(item.fecha_programada || item.fecha_solicitud)}</td>
@@ -247,10 +251,37 @@ export default function AdminInspecciones() {
                           <td style={{ textAlign: 'center' }}>
                             <button 
                               className="mock-btn-action"
-                              style={{ background: '#f1f5f9', color: '#1e293b', border: '1px solid #cbd5e1' }}
+                              style={{ 
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '6px',
+                                background: '#f8fafc', 
+                                color: '#334155', 
+                                border: '1px solid #cbd5e1',
+                                borderRadius: '6px',
+                                padding: '6px 12px',
+                                fontSize: '0.8rem',
+                                fontWeight: '500',
+                                cursor: 'pointer',
+                                transition: 'all 0.15s ease'
+                              }}
+                              onMouseEnter={(e) => {
+                                e.currentTarget.style.background = '#eff6ff';
+                                e.currentTarget.style.borderColor = '#93c5fd';
+                                e.currentTarget.style.color = '#2563eb';
+                              }}
+                              onMouseLeave={(e) => {
+                                e.currentTarget.style.background = '#f8fafc';
+                                e.currentTarget.style.borderColor = '#cbd5e1';
+                                e.currentTarget.style.color = '#334155';
+                              }}
                               onClick={() => abrirSupervision(item)}
                             >
-                              👁️ Supervisar
+                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                                <circle cx="12" cy="12" r="3"></circle>
+                              </svg>
+                              Supervisar
                             </button>
                           </td>
                         </tr>
@@ -286,8 +317,8 @@ export default function AdminInspecciones() {
                     ) : (
                       planillaTecnicos.map((tec) => (
                         <tr key={tec.id}>
-                          <td><strong>{tec.nombre}</strong></td>
-                          <td><code style={{fontSize: '0.75rem', color: '#64748b'}}>{tec.email}</code></td>
+                          <td><strong>{tec.nombre_completo || tec.nombre || tec.correo || 'Desconocido'}</strong></td>
+                          <td><code style={{fontSize: '0.75rem', color: '#64748b'}}>{tec.correo || tec.email || '—'}</code></td>
                           <td style={{ textAlign: 'center', color: tec.pendientes > 0 ? '#ea580c' : 'inherit' }}>
                             {tec.pendientes}
                           </td>
@@ -321,21 +352,18 @@ export default function AdminInspecciones() {
               </h3>
               <button 
                 onClick={() => setInspeccionSeleccionada(null)}
-                style={{ background: 'none', border: 'none', fontSize: '1.2rem', cursor: 'pointer', color: '#94a3b8' }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#94a3b8', display: 'flex', alignItems: 'center', padding: '4px', borderRadius: '6px', transition: 'background 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#f1f5f9'}
+                onMouseLeave={e => e.currentTarget.style.background = 'none'}
               >
-                ✕
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+                </svg>
               </button>
             </div>
             
             <div className="ai-modal-body">
-              {/* Banner de Restricción del Caso de Uso */}
-              <div className="ai-lock-banner">
-                <span>🔒</span>
-                <div>
-                  <strong>Modo de Supervisión Administrativa Restringido (RF-08)</strong>
-                  <br />Usted no dispone de permisos para modificar datos técnicos, porcentajes calculados ni informes generados por los técnicos.
-                </div>
-              </div>
+              {/* Modo de Solo Lectura Informativo */}
 
               {/* Bloque 1: Datos Generales */}
               <div className="ai-detail-grid">
@@ -396,7 +424,13 @@ export default function AdminInspecciones() {
                 </>
               ) : (
                 <div style={{ textAlign: 'center', padding: '30px 10px', background: '#f8fafc', borderRadius: '8px', border: '1px dashed #cbd5e1', color: '#64748b' }}>
-                  🕒 <strong>Esta inspección se encuentra {inspeccionSeleccionada.estado === 'en_proceso' ? 'En Proceso' : 'Pendiente'}</strong>
+                  <div style={{ marginBottom: '8px' }}>
+                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" style={{margin:'0 auto', display:'block'}}>
+                      <circle cx="12" cy="12" r="10"/>
+                      <polyline points="12 6 12 12 16 14"/>
+                    </svg>
+                  </div>
+                  <strong>Esta inspección se encuentra {inspeccionSeleccionada.estado === 'en_proceso' ? 'En Proceso' : 'Pendiente'}</strong>
                   <p style={{ margin: '6px 0 0 0', fontSize: '0.78rem' }}>El Asistente Técnico asignado aún no ha emitido el informe fitosanitario de cierre.</p>
                 </div>
               )}

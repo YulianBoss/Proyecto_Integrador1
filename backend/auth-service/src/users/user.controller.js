@@ -389,7 +389,7 @@ const getTecnicosByLocation = (req, res) => {
     const { departamento, municipio } = req.query;
 
     let query = `
-        SELECT id, nombre_completo, departamento, municipio
+        SELECT id, nombre_completo, correo, departamento, municipio
         FROM usuarios
         WHERE rol = 'tecnico' AND estado = 'activo'
     `;

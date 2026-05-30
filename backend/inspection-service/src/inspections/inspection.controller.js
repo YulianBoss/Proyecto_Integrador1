@@ -500,7 +500,56 @@ const getInspecciones = async (req, res) => {
 
     try {
         const results = await queryAsync(query, params);
-        res.json(results);
+
+        // Enrich with user names from auth-service
+        let userMap = {};
+        try {
+            const userIds = [...new Set(
+                results.flatMap(r => [r.productor_id, r.asistente_id]).filter(Boolean)
+            )];
+            if (userIds.length > 0) {
+                const usersResp = await axios.get(
+                    `${AUTH_URL}/api/users`,
+                    { headers: { Authorization: req.headers.authorization } }
+                );
+                const users = usersResp.data || [];
+                users.forEach(u => { 
+                    userMap[u.id] = u.nombre_completo || u.nombre || u.correo || u.email; 
+                });
+            }
+        } catch (enrichErr) {
+            console.warn('No se pudo enriquecer con nombres de usuarios:', enrichErr.message);
+        }
+
+        // Enrich with predio/lugar names and user names
+        const enriched = await Promise.all(results.map(async (item) => {
+            let predio_nombre = item.predio_nombre;
+            if (!predio_nombre && item.lote_id) {
+                try {
+                    const lotResp = await axios.get(
+                        `${PRODUCTION_URL}/api/lots/${item.lote_id}`,
+                        { headers: { Authorization: req.headers.authorization } }
+                    );
+                    predio_nombre = lotResp.data?.predio_nombre || lotResp.data?.nombre_identificacion || null;
+                    if (predio_nombre) {
+                        queryAsync('UPDATE inspecciones SET predio_nombre = ? WHERE id = ?', [predio_nombre, item.id]).catch(err => {
+                            console.error('Error al guardar predio_nombre actualizado:', err.message);
+                        });
+                    }
+                } catch (e) {
+                    console.warn(`No se pudo recuperar predio_nombre para lote ${item.lote_id}:`, e.message);
+                }
+            }
+
+            return {
+                ...item,
+                predio_nombre: predio_nombre || item.lugar_nombre || 'Predio General',
+                productor_nombre: userMap[item.productor_id] || null,
+                tecnico_nombre: userMap[item.asistente_id] || null,
+            };
+        }));
+
+        res.json(enriched);
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Error al obtener inspecciones' });

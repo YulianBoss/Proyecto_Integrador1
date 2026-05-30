@@ -60,9 +60,9 @@ export default function AdminPlagasMock() {
           className="pro-select-filter"
         >
           <option value="">Todos los niveles de riesgo</option>
-          <option value="alto">🔴 Riesgo Alto</option>
-          <option value="medio">🟡 Riesgo Medio</option>
-          <option value="bajo">🟢 Riesgo Bajo</option>
+          <option value="alto">Riesgo Alto</option>
+          <option value="medio">Riesgo Medio</option>
+          <option value="bajo">Riesgo Bajo</option>
         </select>
         
         <span className="results-counter-pro">
@@ -97,7 +97,8 @@ export default function AdminPlagasMock() {
                   </td>
                   <td>
                     <span className={`badge-risk-pro risk-${row.riesgo}`}>
-                      {row.riesgo === 'alto' ? '🔴 Alto' : row.riesgo === 'medio' ? '🟡 Medio' : '🟢 Bajo'}
+                      <span className="risk-dot"></span>
+                      {row.riesgo === 'alto' ? 'Alto' : row.riesgo === 'medio' ? 'Medio' : 'Bajo'}
                     </span>
                   </td>
                   <td>
@@ -156,7 +157,11 @@ export default function AdminPlagasMock() {
         
         .badge-cultivo-pro { background: #f1f5f9; color: #334155; padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 500; }
         
-        .badge-risk-pro { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-block; }
+        .badge-risk-pro { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: 600; display: inline-flex; align-items: center; gap: 5px; }
+        .risk-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .risk-alto  .risk-dot { background: #dc2626; }
+        .risk-medio .risk-dot { background: #d97706; }
+        .risk-bajo  .risk-dot { background: #16a34a; }
         .risk-alto { background: #fee2e2; color: #991b1b; }
         .risk-medio { background: #fef3c7; color: #92400e; }
         .risk-bajo { background: #dcfce7; color: #166534; }
