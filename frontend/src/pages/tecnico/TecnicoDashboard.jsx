@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import { tecnicoAPI } from '../../services/api'
-// ❌ ELIMINADO: import '../productor/productor.css' (Ya no dependemos de sus estilos)
 
 const KPI_METRICS = [
   { key: 'pendientes', title: 'Pendientes', tone: 'orange', icon: <IcoClock /> },

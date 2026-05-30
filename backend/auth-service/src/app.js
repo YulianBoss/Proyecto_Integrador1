@@ -9,7 +9,16 @@ const solicitudRoutes = require('./solicitudes/solicitud.routes');
 
 const app = express();
 
-app.use(cors());
+// CONFIGURACIÓN DE CORS
+app.use(cors({
+    origin: '*', 
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'] 
+}));
+
+
+app.options(/.*/, cors());
+
 app.use(express.json());
 
 app.use('/api/users', userRoutes);

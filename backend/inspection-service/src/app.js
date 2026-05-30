@@ -9,12 +9,22 @@ const plagaRoutes = require('./plagas/plagas.routes');
 
 const app = express();
 
-app.use(cors());
+// ⚡ CONFIGURACIÓN DE CORS EN INSPECCIONES
+app.use(cors({
+    origin: '*', // Permite que tu React conecte sin restricciones
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'] // Permite recibir el token del usuario
+}));
+
+// Evita fallos con la librería de rutas en Express 5 usando RegExp nativa
+app.options(/.*/, cors());
+
 app.use(express.json());
 
 app.use('/api/inspections', inspectionRoutes);
 app.use('/api/plagas', plagaRoutes);
 
+// 🛠️ CORREGIDO AQUÍ: Añadido 'app.' antes del get
 app.get('/', (req, res) => {
     res.send('Inspection Service funcionando 🔍');
 });
