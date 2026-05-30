@@ -136,11 +136,12 @@ export default function TecnicoInspecciones() {
   }
 
   const abrirRealizar = async (insp) => {
+    const abrirComoInforme = insp?.estado === 'completada'
     setModalRealizar(insp)
-    setModoVista('lotes')
+    setModoVista(abrirComoInforme ? 'final' : 'lotes')
     setDetalleRealizacion(null)
     setLoteActivo(null)
-    await cargarDetalleRealizacion(insp.id)
+    await cargarDetalleRealizacion(insp.id, abrirComoInforme)
   }
 
   const handleIniciar = async (insp) => {
@@ -158,6 +159,7 @@ export default function TecnicoInspecciones() {
   }
 
   const seleccionarLote = (lote) => {
+    if (detalleRealizacion?.inspeccion?.estado === 'completada') return
     setModoVista('lotes')
     setLoteActivo(lote)
     configurarFormularioLote(lote, detalleRealizacion?.plagas_sugeridas)
@@ -258,11 +260,67 @@ export default function TecnicoInspecciones() {
   const resumenDetalle = useMemo(() => detalleRealizacion?.resumen || { total_lotes: 0, lotes_evaluados: 0, todos_evaluados: false }, [detalleRealizacion])
   const esCompletada = detalleRealizacion?.inspeccion?.estado === 'completada'
   const informeFinal = detalleRealizacion?.informe || null
+  const soloInforme = esCompletada && modalRealizar?.estado === 'completada'
+
+  const metricasInforme = useMemo(() => {
+    const lotesInforme = Array.isArray(informeFinal?.lotes) ? informeFinal.lotes : []
+    const resumenPlagas = Array.isArray(informeFinal?.resumen_plagas) ? informeFinal.resumen_plagas : []
+
+    const totalInspeccionadasLotes = lotesInforme.reduce(
+      (acc, lote) => acc + (Number(lote?.total_plantas_inspeccionadas) || 0),
+      0
+    )
+
+    const totalAfectadasResumen = resumenPlagas.reduce(
+      (acc, p) => acc + (Number(p?.plantas_afectadas) || 0),
+      0
+    )
+
+    const totalAfectadasLotes = lotesInforme.reduce(
+      (acc, lote) => acc + (Array.isArray(lote?.plagas)
+        ? lote.plagas.reduce((sub, p) => sub + (Number(p?.plantas_afectadas) || 0), 0)
+        : 0),
+      0
+    )
+
+    const total_plantas_inspeccionadas =
+      Number(informeFinal?.total_plantas_inspeccionadas) ||
+      totalInspeccionadasLotes ||
+      0
+
+    const total_plantas_afectadas =
+      Number(informeFinal?.total_plantas_afectadas) ||
+      totalAfectadasResumen ||
+      totalAfectadasLotes ||
+      0
+
+    const porcentajeCalculado =
+      total_plantas_inspeccionadas > 0
+        ? Number(((total_plantas_afectadas / total_plantas_inspeccionadas) * 100).toFixed(2))
+        : 0
+
+    const porcentaje_infeccion_total =
+      Number(informeFinal?.porcentaje_infeccion_total) || porcentajeCalculado
+
+    return {
+      total_plantas_inspeccionadas,
+      total_plantas_afectadas,
+      porcentaje_infeccion_total,
+    }
+  }, [informeFinal])
+
+  const predioInforme =
+    detalleRealizacion?.lugar?.predio_nombre ||
+    detalleRealizacion?.inspeccion?.predio_nombre ||
+    detalleRealizacion?.lugar?.predio?.nombre ||
+    detalleRealizacion?.lugar?.vereda_direccion ||
+    'No registrado'
 
   const totalAfectacionesLive = formLote.plagas.reduce((acc, p) => acc + (Number(p.plantas_afectadas) || 0), 0)
 
   // Respaldo para el nombre del lote
   const nombreLoteSeguro = loteActivo?.lote_codigo || loteActivo?.nombre || (loteActivo?.lote_id ? `Lote #${loteActivo.lote_id}` : 'Desconocido')
+  const nombreLugarSeguro = detalleRealizacion?.lugar?.nombre || modalRealizar?.lugar_nombre || 'Lugar no registrado'
 
   return (
     <div className="ti-dashboard-area">
@@ -274,7 +332,7 @@ export default function TecnicoInspecciones() {
 
       <div className="ti-header-block">
         <h2>Mis Inspecciones Asignadas</h2>
-        <p>Flujo completo: consulta, evaluación por lote y cierre final consolidado.</p>
+        <p>Flujo completo: consulta, evaluación por lugar de producción y cierre final consolidado.</p>
       </div>
 
       <div className="ti-toolbar">
@@ -297,7 +355,7 @@ export default function TecnicoInspecciones() {
           <table className="ti-table">
             <thead>
               <tr>
-                <th>ID</th><th>Estado</th><th>Predio</th><th>Lugar / Lote</th><th>Programada</th><th>Avance</th><th>Acciones</th>
+                <th>ID</th><th>Estado</th><th>Predio</th><th>Lugar de producción</th><th>Cobertura</th><th>Programada</th><th>Avance</th><th>Acciones</th>
               </tr>
             </thead>
             <tbody>
@@ -306,7 +364,8 @@ export default function TecnicoInspecciones() {
                   <td className="fw-bold">#{insp.id}</td>
                   <td><Badge estado={insp.estado} /></td>
                   <td>{insp.predio_nombre || 'No registrado'}</td>
-                  <td>{insp.lugar_nombre} <span className="ti-tag-lote">{insp.lote_codigo}</span></td>
+                  <td>{insp.lugar_nombre || `Lugar #${insp.lugar_produccion_id}`}</td>
+                  <td className="text-muted">{insp.total_lotes || 0} lotes</td>
                   <td>{fmtFecha(insp.fecha_programada || insp.fecha_solicitud)}</td>
                   <td className="text-muted">{insp.lotes_evaluados || 0}/{insp.total_lotes || 0}</td>
                   <td>
@@ -331,11 +390,11 @@ export default function TecnicoInspecciones() {
           {loadingDetalle || !detalleRealizacion ? (
             <div className="ti-empty-state">Cargando detalle de la inspección...</div>
           ) : (
-            <div className="ti-split-layout">
+            <div className={`ti-split-layout ${soloInforme ? 'solo-informe' : ''}`}>
               
-              <aside className="ti-sidebar">
+              {!soloInforme && <aside className="ti-sidebar">
                 <div className="ti-sidebar-header">
-                  <h4>Lotes Asignados</h4>
+                  <h4>Lotes del lugar</h4>
                   <span className="ti-progreso-badge">{resumenDetalle.lotes_evaluados}/{resumenDetalle.total_lotes}</span>
                 </div>
                 
@@ -369,15 +428,45 @@ export default function TecnicoInspecciones() {
                     <p className="ti-help-text">Evalúa todos los lotes para habilitar el cierre.</p>
                   )}
                 </div>
-              </aside>
+              </aside>}
 
-              <main className="ti-main-area">
+              <main className={`ti-main-area ${soloInforme ? 'solo-informe' : ''}`}>
                 
-                {modoVista === 'lotes' && loteActivo && (
+                {modoVista === 'lotes' && loteActivo && !soloInforme && (
                   <div className="ti-fade-in ti-form-container">
                     <div className="ti-main-header">
-                      <h3>Conteo en campo: {nombreLoteSeguro}</h3>
-                      <p>Registra las métricas fitosanitarias de este sector.</p>
+                      <h3>Inspección del lugar: {nombreLugarSeguro}</h3>
+                      <p>Registrando evaluación del lote {nombreLoteSeguro} dentro del lugar inspeccionado.</p>
+                    </div>
+
+                    <div className="ti-card-info-lote">
+                      <div className="ti-info-grid">
+                        <div className="ti-info-item">
+                          <label>Lugar de producción</label>
+                          <span>{nombreLugarSeguro}</span>
+                        </div>
+                        <div className="ti-info-item">
+                          <label>Productor</label>
+                          <span>{detalleRealizacion?.inspeccion?.productor_nombre || 'No registrado'}</span>
+                        </div>
+                        <div className="ti-info-item">
+                          <label>Cultivo</label>
+                          <span>{loteActivo.especie_nombre || 'No asignado'}</span>
+                        </div>
+                        <div className="ti-info-item">
+                          <label>Área del lote</label>
+                          <span>{loteActivo.area_ha ? `${loteActivo.area_ha} ha` : 'No registrado'}</span>
+                        </div>
+                        <div className="ti-info-item">
+                          <label>Ubicación</label>
+                          <span>
+                            {loteActivo.predio_municipio || detalleRealizacion?.lugar?.municipio || 'No registrado'}
+                            {loteActivo.predio_departamento || detalleRealizacion?.lugar?.departamento
+                              ? `, ${loteActivo.predio_departamento || detalleRealizacion?.lugar?.departamento}`
+                              : ''}
+                          </span>
+                        </div>
+                      </div>
                     </div>
 
                     {loteActivo.evaluado && !esCompletada ? (
@@ -468,18 +557,75 @@ export default function TecnicoInspecciones() {
                 {modoVista === 'final' && (
                   <div className="ti-fade-in ti-form-container">
                     <div className="ti-main-header">
-                      <h3>Cierre y Concepto Técnico</h3>
-                      <p>Todos los lotes han sido evaluados. Redacta la conclusión final.</p>
+                      <h3>Informe Técnico de Inspección</h3>
+                      <p>Consolida los hallazgos del lugar de producción e integra la conclusión final.</p>
                     </div>
 
                     {esCompletada ? (
                       <div className="ti-report-success">
                         <IcoCheck />
-                        <h4>Inspección Finalizada</h4>
+                        <h4>Informe Final Emitido</h4>
+                        <div className="ti-report-meta">
+                          <div><strong>Inspección</strong><span>#{detalleRealizacion?.inspeccion?.id || '-'}</span></div>
+                          <div><strong>Lugar</strong><span>{nombreLugarSeguro}</span></div>
+                          <div><strong>Predio</strong><span>{predioInforme}</span></div>
+                          <div><strong>Fecha de cierre</strong><span>{fmtFecha(detalleRealizacion?.inspeccion?.fecha_cierre)}</span></div>
+                          <div><strong>Lotes evaluados</strong><span>{resumenDetalle.lotes_evaluados}/{resumenDetalle.total_lotes}</span></div>
+                          <div><strong>Nivel de riesgo</strong><span className="ti-risk-badge">{informeFinal?.nivel_riesgo || 'N/A'}</span></div>
+                        </div>
+
                         <div className="ti-report-grid">
-                          <div><strong>Concepto Técnico:</strong> {detalleRealizacion.inspeccion.concepto_tecnico}</div>
-                          <div><strong>Nivel de Riesgo:</strong> {informeFinal?.nivel_riesgo || 'N/A'}</div>
-                          <div className="full-w"><strong>Recomendaciones:</strong> {detalleRealizacion.inspeccion.recomendaciones}</div>
+                          <div className="full-w"><strong>Concepto técnico</strong>{detalleRealizacion?.inspeccion?.concepto_tecnico || 'Sin concepto registrado'}</div>
+                          <div><strong>Plantas inspeccionadas</strong>{metricasInforme.total_plantas_inspeccionadas}</div>
+                          <div><strong>Plantas afectadas</strong>{metricasInforme.total_plantas_afectadas}</div>
+                          <div><strong>Infección total</strong>{metricasInforme.porcentaje_infeccion_total}%</div>
+                          <div className="full-w"><strong>Observaciones generales</strong>{detalleRealizacion?.inspeccion?.observaciones_generales || 'Sin observaciones'}</div>
+                          <div className="full-w"><strong>Recomendaciones</strong>{detalleRealizacion?.inspeccion?.recomendaciones || 'Sin recomendaciones'}</div>
+                        </div>
+
+                        <div className="ti-report-block">
+                          <h5>Resumen de plagas detectadas</h5>
+                          {!informeFinal?.resumen_plagas?.length ? (
+                            <p className="ti-report-empty">No se reportaron plagas en esta inspección.</p>
+                          ) : (
+                            <ul className="ti-report-list">
+                              {informeFinal.resumen_plagas.map((plaga) => (
+                                <li key={plaga.plaga_nombre}>
+                                  <span>{plaga.plaga_nombre}</span>
+                                  <span>{plaga.plantas_afectadas} plantas · {plaga.incidencia_porcentaje}%</span>
+                                </li>
+                              ))}
+                            </ul>
+                          )}
+                        </div>
+
+                        <div className="ti-report-block">
+                          <h5>Detalle por lote</h5>
+                          {!informeFinal?.lotes?.length ? (
+                            <p className="ti-report-empty">No hay detalle de lotes en el informe.</p>
+                          ) : (
+                            <div className="ti-report-lotes">
+                              {informeFinal.lotes.map((l) => (
+                                <article key={l.lote_id} className="ti-report-lote-card">
+                                  <header>
+                                    <strong>{l.lote_codigo || `Lote #${l.lote_id}`}</strong>
+                                    <span>{l.total_plantas_inspeccionadas || 0} plantas inspeccionadas</span>
+                                  </header>
+                                  {!l.plagas?.length ? (
+                                    <p className="ti-report-empty">Sin plagas registradas en este lote.</p>
+                                  ) : (
+                                    <ul>
+                                      {l.plagas.map((p) => (
+                                        <li key={`${l.lote_id}-${p.plaga_nombre}`}>
+                                          {p.plaga_nombre}: {p.plantas_afectadas} plantas ({p.incidencia_porcentaje}%)
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  )}
+                                </article>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ) : (
@@ -543,7 +689,6 @@ export default function TecnicoInspecciones() {
         .ti-badge--pendiente { background: #fff7ed; color: #ea580c; }
         .ti-badge--en_proceso { background: #eff6ff; color: #2563eb; }
         .ti-badge--completada { background: #f0fdf4; color: #16a34a; }
-        .ti-tag-lote { background: #f1f5f9; padding: 2px 6px; border-radius: 4px; font-weight: 600; margin-left: 6px; }
         .ti-btn-action { display: inline-flex; align-items: center; gap: 6px; padding: 6px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; cursor: pointer; border: 1px solid transparent; transition: opacity 0.15s, filter 0.15s; }
         .ti-btn-action svg { width: 14px; height: 14px; flex-shrink: 0; }
         .ti-btn-action:hover { filter: brightness(0.93); }
@@ -555,15 +700,16 @@ export default function TecnicoInspecciones() {
 
         /* MODAL CORREGIDO: MENOR TAMAÑO */
         .ti-modal-overlay { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
-        .ti-modal { background: #f8fafc; width: 100%; max-width: 850px; height: 85vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.25); }
+        .ti-modal { background: #f8fafc; width: 100%; max-width: 900px; height: 88vh; border-radius: 12px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 20px 40px -10px rgba(0,0,0,0.25); }
         .ti-modal__header { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: white; border-bottom: 1px solid #e2e8f0; }
         .ti-modal__header h3 { margin: 0; font-size: 1.1rem; color: #0f172a; }
         .ti-modal__close { background: none; border: none; cursor: pointer; color: #64748b; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 6px; transition: background 0.15s; }
         .ti-modal__close:hover { background: #f1f5f9; color: #0f172a; }
         .ti-modal__close svg { width: 18px; height: 18px; }
-        .ti-modal__body { flex: 1; display: flex; overflow: hidden; }
+        .ti-modal__body { flex: 1; display: flex; min-height: 0; overflow: hidden; }
 
-        .ti-split-layout { display: flex; width: 100%; height: 100%; }
+        .ti-split-layout { display: flex; width: 100%; height: 100%; min-height: 0; }
+        .ti-split-layout.solo-informe { display: flex; justify-content: center; }
         
         .ti-sidebar { width: 280px; background: white; border-right: 1px solid #e2e8f0; display: flex; flex-direction: column; }
         .ti-sidebar-header { padding: 16px; border-bottom: 1px solid #f1f5f9; display: flex; justify-content: space-between; align-items: center; }
@@ -587,14 +733,22 @@ export default function TecnicoInspecciones() {
         .ti-btn-informe:disabled { opacity: 0.5; cursor: not-allowed; }
         .ti-help-text { margin: 6px 0 0 0; font-size: 0.7rem; color: #64748b; text-align: center; }
 
-        .ti-main-area { flex: 1; padding: 24px; overflow-y: auto; background: #f8fafc; display: flex; flex-direction: column; align-items: center; }
-        .ti-form-container { width: 100%; max-width: 500px; }
+        .ti-main-area { flex: 1; min-height: 0; padding: 24px; overflow-y: auto; background: #f8fafc; display: flex; flex-direction: column; align-items: center; }
+        .ti-main-area.solo-informe { align-items: center; }
+        .ti-form-container { width: 100%; max-width: 560px; }
+        .ti-main-area.solo-informe .ti-form-container { max-width: 760px; margin: 0 auto; }
         .ti-fade-in { animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
         .ti-main-header { margin-bottom: 20px; }
         .ti-main-header h3 { margin: 0 0 4px 0; font-size: 1.25rem; color: #0f172a; }
         .ti-main-header p { margin: 0; color: #64748b; font-size: 0.9rem;}
+
+        .ti-card-info-lote { background: white; border: 1px solid #dbeafe; padding: 16px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); margin-bottom: 16px; }
+        .ti-info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 16px; }
+        .ti-info-item { display: flex; flex-direction: column; }
+        .ti-info-item label { font-size: 0.75rem; font-weight: 700; text-transform: uppercase; color: #0284c7; letter-spacing: 0.5px; margin-bottom: 4px; }
+        .ti-info-item span { font-size: 0.95rem; color: #0f172a; font-weight: 500; }
 
         .ti-form-conteo, .ti-form-final { display: flex; flex-direction: column; gap: 16px; }
         .ti-card-stepper, .ti-card-plagas, .ti-card-simple { background: white; border: 1px solid #e2e8f0; padding: 16px; border-radius: 12px; box-shadow: 0 1px 2px rgba(0,0,0,0.02); }
@@ -645,15 +799,46 @@ export default function TecnicoInspecciones() {
         .ti-alert.success strong { font-size: 1rem; display: block; margin-bottom: 2px; }
         .ti-alert.success p { margin: 0; font-size: 0.85rem; color: #166534; }
 
-        .ti-report-success { background: white; border: 1px solid #e2e8f0; padding: 24px; border-radius: 12px; text-align: center; }
+        .ti-report-success { background: white; border: 1px solid #e2e8f0; padding: 24px; border-radius: 12px; text-align: left; width: 100%; }
         .ti-report-success svg { width: 36px; height: 36px; color: #22c55e; margin-bottom: 12px; }
-        .ti-report-success h4 { margin: 0 0 16px 0; font-size: 1.15rem; color: #0f172a; }
-        .ti-report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #f1f5f9; }
+        .ti-report-success h4 { margin: 0 0 16px 0; font-size: 1.15rem; color: #0f172a; text-align: center; }
+        .ti-report-meta { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+        .ti-report-meta > div { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #fff; }
+        .ti-report-meta strong { display: block; color: #64748b; font-size: 0.72rem; text-transform: uppercase; margin-bottom: 4px; }
+        .ti-report-meta span { color: #0f172a; font-weight: 600; font-size: 0.86rem; }
+        .ti-risk-badge { text-transform: capitalize; background: #eff6ff; border: 1px solid #bfdbfe; color: #1d4ed8; border-radius: 999px; padding: 3px 8px; display: inline-block; }
+        .ti-report-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; text-align: left; background: #f8fafc; padding: 16px; border-radius: 8px; border: 1px solid #f1f5f9; margin-bottom: 14px; }
         .ti-report-grid .full-w { grid-column: span 2; }
         .ti-report-grid strong { display: block; color: #64748b; font-size: 0.75rem; text-transform: uppercase; margin-bottom: 4px; }
+        .ti-report-block { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px; margin-bottom: 12px; background: #fff; }
+        .ti-report-block h5 { margin: 0 0 8px 0; font-size: 0.92rem; color: #0f172a; }
+        .ti-report-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+        .ti-report-list li { display: flex; justify-content: space-between; gap: 10px; border: 1px solid #f1f5f9; background: #f8fafc; border-radius: 6px; padding: 8px 10px; font-size: 0.82rem; color: #334155; }
+        .ti-report-lotes { display: grid; gap: 10px; }
+        .ti-report-lote-card { border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px; background: #f8fafc; }
+        .ti-report-lote-card header { display: flex; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+        .ti-report-lote-card header strong { color: #0f172a; font-size: 0.86rem; }
+        .ti-report-lote-card header span { color: #64748b; font-size: 0.76rem; }
+        .ti-report-lote-card ul { margin: 0; padding-left: 18px; color: #334155; font-size: 0.8rem; display: flex; flex-direction: column; gap: 4px; }
+        .ti-report-empty { margin: 0; font-size: 0.8rem; color: #64748b; }
 
         .ti-input-group { display: flex; flex-direction: column; gap: 6px; }
         .ti-input-group label { font-weight: 600; font-size: 0.9rem; color: #0f172a; }
+
+        @media (max-width: 900px) {
+          .ti-modal { max-width: 96vw; height: 90vh; }
+          .ti-main-area.solo-informe .ti-form-container { max-width: 100%; }
+          .ti-report-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 620px) {
+          .ti-modal-overlay { padding: 8px; }
+          .ti-modal { height: 94vh; }
+          .ti-main-area { padding: 14px; }
+          .ti-report-meta { grid-template-columns: 1fr; }
+          .ti-report-grid { grid-template-columns: 1fr; }
+          .ti-report-grid .full-w { grid-column: span 1; }
+        }
       `}</style>
     </div>
   )

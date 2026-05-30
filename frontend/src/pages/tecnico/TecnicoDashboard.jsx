@@ -7,29 +7,9 @@ const KPI_METRICS = [
   { key: 'pendientes', title: 'Pendientes', tone: 'orange', icon: <IcoClock /> },
   { key: 'en_proceso', title: 'En proceso', tone: 'blue', icon: <IcoPlay /> },
   { key: 'completadas', title: 'Completadas', tone: 'green', icon: <IcoCheck /> },
-  { key: 'sin_lotes_inspeccionables', title: 'Sin lotes inspeccionables', tone: 'red', icon: <IcoAlert /> },
-  { key: 'lotes_evaluados', title: 'Lotes evaluados', tone: 'purple', icon: <IcoLote /> },
-  { key: 'porcentaje_completadas', title: 'Completadas %', tone: 'teal', icon: <IcoChart /> },
 ]
 
-const ACTION_CARDS = [
-  {
-    title: 'Consultar inspecciones',
-    subtitle: 'Revisa tus inspecciones asignadas y su progreso.',
-    tone: 'blue',
-    icon: <IcoClipboard />,
-    button: 'Ir a inspecciones',
-    to: '/tecnico/inspecciones',
-  },
-  {
-    title: 'Realizar inspecciones',
-    subtitle: 'Inicia nuevas inspecciones y registra los hallazgos.',
-    tone: 'orange',
-    icon: <IcoPlay />,
-    button: 'Comenzar ahora',
-    to: '/tecnico/inspecciones',
-  },
-]
+const PRIMARY_ACTION_TO = '/tecnico/inspecciones'
 
 export default function TecnicoDashboard() {
   const { user } = useAuth()
@@ -107,6 +87,7 @@ export default function TecnicoDashboard() {
   }
 
   const totalAlertas = notifications.nuevas_asignaciones.length + notifications.proximas_vencer.length + notifications.recientes_completadas.length
+  const proximaPrincipal = proximasInspecciones[0] || null
 
   return (
     <div className="dashboard-content-area">
@@ -153,9 +134,25 @@ export default function TecnicoDashboard() {
       </section>
 
       <section className="dashboard-section">
+        <div className="primary-action-panel">
+          <div>
+            <h3>Acción principal</h3>
+            <p>Inicia y completa tus inspecciones pendientes desde un solo flujo.</p>
+          </div>
+          <button
+            type="button"
+            className="primary-action-btn"
+            onClick={() => navigate(PRIMARY_ACTION_TO)}
+          >
+            <IcoPlay /> Realizar inspecciones
+          </button>
+        </div>
+      </section>
+
+      <section className="dashboard-section">
         <div className="ph-header">
-          <h2>Resumen general</h2>
-          <p>Visualiza el estado actual de tus inspecciones y los indicadores más relevantes.</p>
+          <h2>Resumen esencial</h2>
+          <p>Solo los indicadores clave para decidir tu siguiente inspección.</p>
         </div>
 
         {metricsLoading ? (
@@ -165,9 +162,7 @@ export default function TecnicoDashboard() {
         ) : (
           <div className="kpi-grid">
             {KPI_METRICS.map((metric) => {
-              const value = metric.key === 'porcentaje_completadas'
-                ? `${metrics?.porcentaje_completadas ?? 0}%`
-                : metrics?.[metric.key] ?? 0
+              const value = metrics?.[metric.key] ?? 0
               return (
                 <div key={metric.key} className="kpi-card">
                   <div className={`kpi-icon-wrapper tone-${metric.tone}`}>{metric.icon}</div>
@@ -181,106 +176,55 @@ export default function TecnicoDashboard() {
           </div>
         )}
 
-        {!metricsLoading && metrics?.plaga_recurrente && (
-          <div className="info-row-banner" style={{ marginTop: '1rem' }}>
-            <div className="info-badge-icon">🐞</div>
-            <div className="info-text-block">
-              <h4>Plaga más recurrente</h4>
-              <p>{metrics.plaga_recurrente.nombre} · {metrics.plaga_recurrente.apariciones} veces registrada.</p>
-            </div>
-          </div>
-        )}
       </section>
 
       <section className="dashboard-section">
-        <div className="p-section">
+        <div className="p-section p-section--compact">
           <div className="p-section__header">
-            <h3>Centro de Notificaciones</h3>
+            <h3>Alertas clave</h3>
             <div>
               <span className="p-badge p-badge--proceso">{totalAlertas} alertas</span>
             </div>
           </div>
           <div className="p-section__body">
-            <div className="kpi-grid">
+            <div className="compact-alert-grid">
               {[
                 { title: 'Nuevas asignaciones', count: notifications.nuevas_asignaciones.length, tone: 'blue', icon: <IcoClipboard /> },
                 { title: 'Próximas a vencer', count: notifications.proximas_vencer.length, tone: 'orange', icon: <IcoClock /> },
                 { title: 'Completadas recientemente', count: notifications.recientes_completadas.length, tone: 'green', icon: <IcoCheck /> },
               ].map((item) => (
-                <div key={item.title} className="kpi-card">
+                <div key={item.title} className="compact-alert-item">
                   <div className={`kpi-icon-wrapper tone-${item.tone}`}>{item.icon}</div>
                   <div>
-                    <div className="kpi-value">{item.count}</div>
-                    <div className="kpi-label">{item.title}</div>
+                    <div className="compact-alert-value">{item.count}</div>
+                    <div className="compact-alert-label">{item.title}</div>
                   </div>
                 </div>
               ))}
             </div>
 
-            <div className="p-section__body" style={{ marginTop: '1rem', padding: 0 }}>
+            <div className="next-inspection-card">
               {loading ? (
-                <div className="p-loading">Cargando inspecciones próximas...</div>
+                <div className="p-loading">Cargando próxima inspección...</div>
               ) : error ? (
                 <div className="p-alert p-alert--error">{error}</div>
-              ) : proximasInspecciones.length === 0 ? (
-                <div className="p-alert p-alert--info">No tienes inspecciones próximas por realizar.</div>
+              ) : !proximaPrincipal ? (
+                <div className="p-alert p-alert--info">No tienes inspecciones activas por realizar.</div>
               ) : (
-                <div className="p-table-wrap">
-                  <table className="p-table">
-                    <thead>
-                      <tr>
-                        <th>Fecha</th>
-                        <th>Predio</th>
-                        <th>Lugar</th>
-                        <th>Lote</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {proximasInspecciones.map((insp) => (
-                        <tr key={insp.id}>
-                          <td style={{ fontWeight: '600', color: '#0f172a' }}>{formatearFecha(insp.fecha_programada || insp.fecha_solicitud)}</td>
-                          <td>{insp.predio_nombre || 'No registrado'}</td>
-                          <td><span className="t-badge-lugar">{insp.lugar_nombre || `Lugar #${insp.lugar_produccion_id}`}</span></td>
-                          <td><span className="t-badge-lote">{insp.lote_codigo || `Lote #${insp.lote_id}`}</span></td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <>
+                  <div>
+                    <strong>{formatearFecha(proximaPrincipal.fecha_programada || proximaPrincipal.fecha_solicitud)}</strong>
+                    <p>
+                      {proximaPrincipal.predio_nombre || 'Predio no registrado'} · {proximaPrincipal.lote_codigo || `Lote #${proximaPrincipal.lote_id}`}
+                    </p>
+                  </div>
+                  <button type="button" className="action-btn btn-text-blue" onClick={() => navigate(PRIMARY_ACTION_TO)}>
+                    Ir a realizar <span className="arrow">→</span>
+                  </button>
+                </>
               )}
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="dashboard-section">
-        <div className="ph-header">
-          <h2>Accesos rápidos</h2>
-          <p>Empieza a trabajar con tus inspecciones desde aquí.</p>
-        </div>
-
-        <div className="action-grid">
-          {ACTION_CARDS.map((card) => (
-            <div
-              key={card.title}
-              className="action-card"
-              onClick={() => navigate(card.to)}
-              role="button"
-              tabIndex={0}
-              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); navigate(card.to) } }}
-            >
-              <div className={`action-icon-box box-${card.tone}`}>{card.icon}</div>
-              <h4>{card.title}</h4>
-              <p>{card.subtitle}</p>
-              <button
-                type="button"
-                className={`action-btn btn-text-${card.tone}`}
-                onClick={(e) => { e.stopPropagation(); navigate(card.to) }}
-              >
-                {card.button} <span className="arrow">→</span>
-              </button>
-            </div>
-          ))}
         </div>
       </section>
 
@@ -321,6 +265,33 @@ export default function TecnicoDashboard() {
 
         /* Secciones */
         .dashboard-section { margin-bottom: 35px; }
+        .primary-action-panel {
+          border: 1px solid #bfdbfe;
+          background: linear-gradient(120deg, #eff6ff 0%, #dbeafe 100%);
+          border-radius: 14px;
+          padding: 18px 20px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 16px;
+        }
+        .primary-action-panel h3 { margin: 0 0 4px 0; color: #0f172a; font-size: 1.1rem; }
+        .primary-action-panel p { margin: 0; color: #1e3a8a; font-size: 0.88rem; }
+        .primary-action-btn {
+          display: inline-flex;
+          align-items: center;
+          gap: 8px;
+          border: none;
+          border-radius: 999px;
+          padding: 12px 20px;
+          background: #1d4ed8;
+          color: #fff;
+          font-weight: 700;
+          cursor: pointer;
+          box-shadow: 0 10px 20px rgba(29, 78, 216, 0.25);
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .primary-action-btn:hover { transform: translateY(-1px); box-shadow: 0 14px 24px rgba(29, 78, 216, 0.3); }
         .ph-header { margin-bottom: 20px; }
         .ph-header h2 { font-size: 1.35rem; color: #0f172a; margin: 0 0 6px 0; font-weight: 700; }
         .ph-header p { font-size: 0.9rem; color: #64748b; margin: 0; }
@@ -353,6 +324,24 @@ export default function TecnicoDashboard() {
         .p-section__header h3 { margin: 0; font-size: 1.1rem; color: #0f172a; font-weight: 600; }
         .p-badge { background: #e0f2fe; color: #0369a1; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 600; }
         .p-section__body { padding: 24px; }
+        .p-section--compact .p-section__body { padding: 16px 18px; }
+        .compact-alert-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+        .compact-alert-item { border: 1px solid #e2e8f0; background: #fff; border-radius: 10px; padding: 10px 12px; display: flex; gap: 10px; align-items: center; }
+        .compact-alert-value { font-size: 1.1rem; font-weight: 700; color: #0f172a; line-height: 1; }
+        .compact-alert-label { font-size: 0.75rem; color: #64748b; }
+        .next-inspection-card {
+          margin-top: 10px;
+          border: 1px solid #dbeafe;
+          background: #f8fbff;
+          border-radius: 10px;
+          padding: 12px 14px;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          gap: 12px;
+        }
+        .next-inspection-card strong { color: #0f172a; font-size: 0.9rem; }
+        .next-inspection-card p { margin: 2px 0 0 0; color: #475569; font-size: 0.8rem; }
 
         /* Diseño de Tablas */
         .p-table-wrap { border-radius: 8px; border: 1px solid #e2e8f0; overflow: hidden; }
@@ -387,6 +376,9 @@ export default function TecnicoDashboard() {
           .welcome-banner { flex-direction: column; align-items: flex-start; gap: 20px; padding: 24px; }
           .banner-content { max-width: 100%; }
           .banner-graphic-container { width: 120px; height: 120px; align-self: flex-end; }
+          .primary-action-panel { flex-direction: column; align-items: flex-start; }
+          .compact-alert-grid { grid-template-columns: 1fr; }
+          .next-inspection-card { flex-direction: column; align-items: flex-start; }
         }
       `}</style>
     </div>

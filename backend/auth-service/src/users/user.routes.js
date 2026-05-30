@@ -6,6 +6,7 @@ const {
     login,
     getAllUsers,
     getUserById,
+    getUserPublicById,
     updateUser,
     toggleUserStatus,
     getTecnicosByLocation
@@ -19,6 +20,7 @@ router.post('/login', login);
 
 // ─── SERVICIO INTERNO (cualquier token válido) ───────────────
 router.get('/tecnicos', verifyToken, getTecnicosByLocation);
+router.get('/public/:id', verifyToken, getUserPublicById);
 
 // ─── SOLO ADMIN ──────────────────────────────
 router.get('/', verifyToken, verifyAdmin, getAllUsers);

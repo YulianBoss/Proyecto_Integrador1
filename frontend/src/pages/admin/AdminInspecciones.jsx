@@ -17,6 +17,8 @@ export default function AdminInspecciones() {
   const [inspeccionSeleccionada, setInspeccionSeleccionada] = useState(null)
   const [detalleData, setDetalleData] = useState(null)
   const [loadingDetalle, setLoadingDetalle] = useState(false)
+  const [asignandoId, setAsignandoId] = useState(null)
+  const [tecnicoSeleccionado, setTecnicoSeleccionado] = useState({})
 
 // 1. Cargar datos desde la API (VERSIÓN DIAGNÓSTICO)
   const cargarDatos = useCallback(async () => {
@@ -112,6 +114,26 @@ export default function AdminInspecciones() {
     }
   }
 
+  const asignarTecnicoManual = async (inspeccionId) => {
+    const tecnico_id = Number(tecnicoSeleccionado[inspeccionId])
+    if (!Number.isInteger(tecnico_id) || tecnico_id <= 0) {
+      setError('Selecciona un tecnico valido para asignar.')
+      return
+    }
+
+    setAsignandoId(inspeccionId)
+    setError('')
+    try {
+      await inspeccionesAPI.asignarTecnico(inspeccionId, { tecnico_id })
+      await cargarDatos()
+    } catch (err) {
+      const message = err?.response?.data?.message || 'No se pudo asignar el tecnico manualmente.'
+      setError(message)
+    } finally {
+      setAsignandoId(null)
+    }
+  }
+
   // Helper para formato de fecha
   const fmtFecha = (f) => f ? new Date(f).toLocaleDateString('es-CO') : 'No agendada'
 
@@ -144,6 +166,22 @@ export default function AdminInspecciones() {
         .ai-detail-block { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #f1f5f9; }
         .ai-detail-block strong { display: block; color: #0f172a; margin-bottom: 4px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.02em; }
         .ai-input-readonly { width: 100%; background: #f4f6f9; border: 1px solid #cbd5e1; border-radius: 6px; padding: 8px; font-family: inherit; font-size: 0.85rem; color: #475569; cursor: not-allowed; }
+        .ai-assign-wrap { margin-top: 8px; display: flex; gap: 6px; align-items: center; }
+        .ai-assign-select { font-size: 0.75rem; padding: 6px 8px; border-radius: 8px; border: 1px solid #bfdbfe; background: #f8fbff; color: #1e3a8a; min-width: 150px; }
+        .ai-assign-btn {
+          font-size: 0.74rem;
+          padding: 6px 10px;
+          border-radius: 999px;
+          border: 1px solid #2563eb;
+          color: #fff;
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          box-shadow: 0 4px 10px rgba(37, 99, 235, 0.25);
+          font-weight: 600;
+          cursor: pointer;
+          transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        }
+        .ai-assign-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 6px 12px rgba(37, 99, 235, 0.35); }
+        .ai-assign-btn:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
       `}</style>
 
       <header>
@@ -241,7 +279,32 @@ export default function AdminInspecciones() {
                               <div style={{ fontSize: '0.75rem', color: '#64748b' }}>{item.lugar_nombre}</div>
                             )}
                           </td>
-                          <td>{item.tecnico_nombre || 'Sin asignar'}</td>
+                          <td>
+                            {item.tecnico_nombre || 'Sin asignar'}
+                            {!item.tecnico_nombre && item.estado === 'pendiente' && (
+                              <div className="ai-assign-wrap">
+                                <select
+                                  value={tecnicoSeleccionado[item.id] || ''}
+                                  onChange={(e) => setTecnicoSeleccionado((prev) => ({ ...prev, [item.id]: e.target.value }))}
+                                  className="ai-assign-select"
+                                >
+                                  <option value="">Asignar tecnico...</option>
+                                  {tecnicos.map((tec) => (
+                                    <option key={tec.id} value={tec.id}>
+                                      {tec.nombre_completo || tec.nombre || tec.correo || `Tecnico #${tec.id}`}
+                                    </option>
+                                  ))}
+                                </select>
+                                <button
+                                  className="ai-assign-btn"
+                                  disabled={asignandoId === item.id}
+                                  onClick={() => asignarTecnicoManual(item.id)}
+                                >
+                                  {asignandoId === item.id ? 'Asignando...' : 'Asignar'}
+                                </button>
+                              </div>
+                            )}
+                          </td>
                           <td>{fmtFecha(item.fecha_programada || item.fecha_solicitud)}</td>
                           <td>
                             <span className={`mock-badge badge-${item.estado}`}>

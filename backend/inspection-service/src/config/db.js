@@ -96,6 +96,7 @@ connection.connect((err) => {
         (next) => ensureColumn('lote_codigo', 'VARCHAR(120) NULL', 'lote_id', next),
         (next) => ensureColumn('lugar_nombre', 'VARCHAR(255) NULL', 'lugar_produccion_id', next),
         (next) => ensureColumn('predio_nombre', 'VARCHAR(255) NULL', 'municipio', next),
+        (next) => ensureColumn('productor_nombre', 'VARCHAR(255) NULL', 'productor_id', next),
         (next) => ensureColumn('porcentaje_infeccion_total', 'DECIMAL(8,2) NULL', 'concepto_tecnico', next),
         (next) => ensureColumn('nivel_riesgo', 'VARCHAR(30) NULL', 'porcentaje_infeccion_total', next),
         (next) => ensureColumn('informe_json', 'LONGTEXT NULL', 'nivel_riesgo', next),

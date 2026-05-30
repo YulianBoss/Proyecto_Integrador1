@@ -24,13 +24,12 @@ export default function SolicitarInspeccion() {
   const [lugares, setLugares]             = useState([])
   const [lugarSel, setLugarSel]           = useState('')
   const [lotesActivos, setLotesActivos]   = useState([])
-  const [loteSel, setLoteSel]             = useState('')
   const [fecha, setFecha]                 = useState('')
   const [loadLugares, setLoadLugares]     = useState(true)
   const [loadLotes, setLoadLotes]         = useState(false)
   const [procesando, setProcesando]       = useState(false)
   const [toast, setToast]                 = useState(null)
-  const [validacionLote, setValidacionLote] = useState(null)
+  const [validacionLugar, setValidacionLugar] = useState(null)
   const [showConfirm, setShowConfirm]     = useState(false)
   const [ultimoResultado, setUltimoResultado] = useState(null)
   const [inspecciones, setInspecciones]   = useState([])
@@ -41,7 +40,6 @@ export default function SolicitarInspeccion() {
 
   const hoy = new Date().toISOString().split('T')[0]
   const lugarSeleccionado = lugares.find(l => String(l.id) === String(lugarSel))
-  const loteSeleccionado  = lotesActivos.find(l => String(l.id) === String(loteSel))
 
   const toast_ = (msg, tipo = 'ok') => { setToast({ msg, tipo }); setTimeout(() => setToast(null), 4000) }
 
@@ -50,7 +48,7 @@ export default function SolicitarInspeccion() {
   }, [])
 
   useEffect(() => {
-    setLoteSel(''); setValidacionLote(null); setLotesActivos([])
+    setValidacionLugar(null); setLotesActivos([])
     if (!lugarSel) return
     setLoadLotes(true)
     lotesAPI.getByLugar(lugarSel)
@@ -59,36 +57,40 @@ export default function SolicitarInspeccion() {
   }, [lugarSel])
 
   useEffect(() => {
-    setValidacionLote(null)
-    if (!loteSel) return
+    setValidacionLugar(null)
+    if (!lugarSel) return
+
     inspeccionesAPI.misSolicitudes().then(r => {
       const activa = (r.data || []).find(i =>
-        String(i.lote_id) === String(loteSel) && ['pendiente', 'en_proceso'].includes(i.estado)
+        String(i.lugar_produccion_id) === String(lugarSel) && ['pendiente', 'en_proceso'].includes(i.estado)
       )
-      if (activa) {
-        setValidacionLote({ tipo: 'warn', mensaje: `Este lote ya tiene una inspeccion en estado "${activa.estado}". Espera a que finalice.` })
+
+      if (lotesActivos.length === 0) {
+        setValidacionLugar({ tipo: 'warn', mensaje: 'Este lugar no tiene lotes activos para inspeccionar.' })
+      } else if (activa) {
+        setValidacionLugar({ tipo: 'warn', mensaje: `Este lugar ya tiene una inspeccion en estado "${activa.estado}". Espera a que finalice.` })
       } else {
-        setValidacionLote({ tipo: 'ok', mensaje: `Lote ${loteSeleccionado?.codigo || ''} disponible para inspeccion.` })
+        setValidacionLugar({ tipo: 'ok', mensaje: `Lugar disponible. Se inspeccionarán ${lotesActivos.length} lote(s) activo(s).` })
       }
     }).catch(() => {})
-  }, [loteSel]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [lugarSel, lotesActivos])
 
-  const puedeEnviar = validacionLote?.tipo === 'ok' && lugarSel && loteSel && fecha && fecha >= hoy
+  const puedeEnviar = validacionLugar?.tipo === 'ok' && lugarSel && fecha && fecha >= hoy
 
   const confirmarYEnviarSolicitud = async () => {
     if (!puedeEnviar) return
     setProcesando(true)
     try {
-      const res = await inspeccionesAPI.solicitar({ lote_id: parseInt(loteSel), fecha_solicitada: fecha })
+      const res = await inspeccionesAPI.solicitar({ lugar_produccion_id: parseInt(lugarSel), fecha_solicitada: fecha })
       toast_(res.data.message || 'Solicitud enviada correctamente.')
       setUltimoResultado({
         lugar:        lugarSeleccionado?.nombre || '-',
-        lote_codigo:  loteSeleccionado?.codigo  || `Lote #${loteSel}`,
+        lotes_total:  lotesActivos.length,
         municipio:    lugarSeleccionado?.municipio    || '-',
         departamento: lugarSeleccionado?.departamento || '-',
         pendiente_asignacion: Boolean(res.data?.pendiente_asignacion),
       })
-      setFecha(''); setLugarSel(''); setLoteSel(''); setValidacionLote(null); setShowConfirm(false)
+      setFecha(''); setLugarSel(''); setValidacionLugar(null); setShowConfirm(false)
       setTab('historial')
     } catch (err) {
       toast_(err.response?.data?.message || 'Error al enviar solicitud.', 'error')
@@ -118,7 +120,7 @@ export default function SolicitarInspeccion() {
   useEffect(() => { if (tab === 'historial') cargarHistorial() }, [tab, cargarHistorial])
 
   const lugarNombre = (id) => lugares.find(l => String(l.id) === String(id))?.nombre || `Lugar #${id}`
-  const loteNombre  = (id) => lotesMap[id] ? `Lote ${lotesMap[id]}` : (id ? `Lote #${id}` : '-')
+  const loteNombre  = (id) => lotesMap[id] ? `Lote ${lotesMap[id]}` : (id ? `Lote #${id}` : 'Todos los lotes activos')
 
   return (
     <div>
@@ -142,14 +144,14 @@ export default function SolicitarInspeccion() {
       {tab === 'solicitar' && (
         <div className="p-section">
           <div className="p-section__header">
-            <div><h3>Nueva solicitud de inspeccion</h3><p>Seleccione el lugar, el lote y la fecha deseada.</p></div>
+            <div><h3>Nueva solicitud de inspeccion</h3><p>Seleccione el lugar y la fecha deseada. Se incluirán todos sus lotes activos.</p></div>
           </div>
           <div className="p-section__body">
             {ultimoResultado && (
               <div className="p-alert p-alert--success" style={{ marginBottom: '1rem' }}>
                 <IcoCheck />
                 <span>
-                  Solicitud registrada para el lote <strong>{ultimoResultado.lote_codigo}</strong> de{' '}
+                  Solicitud registrada para <strong>{ultimoResultado.lotes_total} lote(s)</strong> de{' '}
                   <strong>{ultimoResultado.lugar}</strong> ({ultimoResultado.municipio} - {ultimoResultado.departamento}).{' '}
                   {ultimoResultado.pendiente_asignacion ? 'Pendiente de asignacion de tecnico.' : 'Tecnico asignado automaticamente.'}
                 </span>
@@ -173,7 +175,7 @@ export default function SolicitarInspeccion() {
                 <span className="p-hint">La fecha no puede ser anterior a hoy.</span>
               </div>
               <div className="p-form-group" style={{ gridColumn: '1 / -1' }}>
-                <label className="p-label">Lote a inspeccionar *</label>
+                <label className="p-label">Lotes activos a inspeccionar</label>
                 {loadLotes ? (
                   <span className="p-td-muted"><span className="p-spinner p-spinner--sm" /> Cargando lotes...</span>
                 ) : !lugarSel ? (
@@ -183,16 +185,18 @@ export default function SolicitarInspeccion() {
                     <IcoAlert /> Este lugar no tiene lotes activos.
                   </div>
                 ) : (
-                  <select className="p-input" value={loteSel} onChange={e => setLoteSel(e.target.value)}>
-                    <option value="">Seleccione un lote...</option>
-                    {lotesActivos.map(l => <option key={l.id} value={l.id}>{l.codigo} - {l.area_ha} ha</option>)}
-                  </select>
+                  <div className="p-alert p-alert--info" style={{ margin: 0 }}>
+                    <IcoInfo />
+                    <span>
+                      Se inspeccionarán <strong>{lotesActivos.length}</strong> lote(s) activo(s): {lotesActivos.map((l) => l.codigo).join(', ')}.
+                    </span>
+                  </div>
                 )}
               </div>
             </div>
-            {loteSel && validacionLote && (
-              <div className={`p-alert p-alert--${validacionLote.tipo === 'ok' ? 'success' : 'warn'}`} style={{ marginTop: '1rem' }}>
-                {validacionLote.tipo === 'ok' ? <IcoCheck /> : <IcoAlert />} {validacionLote.mensaje}
+            {lugarSel && validacionLugar && (
+              <div className={`p-alert p-alert--${validacionLugar.tipo === 'ok' ? 'success' : 'warn'}`} style={{ marginTop: '1rem' }}>
+                {validacionLugar.tipo === 'ok' ? <IcoCheck /> : <IcoAlert />} {validacionLugar.mensaje}
               </div>
             )}
             <div className="p-alert p-alert--info" style={{ marginTop: '1rem' }}>
@@ -203,7 +207,7 @@ export default function SolicitarInspeccion() {
               <button className="p-btn p-btn--green" onClick={() => setShowConfirm(true)} disabled={!puedeEnviar || procesando}>
                 {procesando ? <><span className="p-spinner p-spinner--sm" /> Enviando...</> : <><IcoSend /> Enviar solicitud</>}
               </button>
-              <button className="p-btn p-btn--outline" onClick={() => { setLugarSel(''); setLoteSel(''); setFecha(''); setValidacionLote(null); setUltimoResultado(null) }}>
+              <button className="p-btn p-btn--outline" onClick={() => { setLugarSel(''); setFecha(''); setValidacionLugar(null); setUltimoResultado(null) }}>
                 Limpiar
               </button>
             </div>
@@ -223,7 +227,7 @@ export default function SolicitarInspeccion() {
                 <IcoInfo />
                 <span>
                   <strong>Lugar:</strong> {lugarSeleccionado?.nombre || '-'} ({lugarSeleccionado?.municipio || '-'} - {lugarSeleccionado?.departamento || '-'})<br />
-                  <strong>Lote:</strong> {loteSeleccionado?.codigo || '-'} - {loteSeleccionado?.area_ha || '-'} ha<br />
+                  <strong>Lotes incluidos:</strong> {lotesActivos.length} activo(s)<br />
                   <strong>Fecha solicitada:</strong> {fecha || '-'}
                 </span>
               </div>

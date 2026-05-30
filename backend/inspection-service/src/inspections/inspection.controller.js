@@ -41,6 +41,23 @@ const logAccionTecnico = (accion, tecnicoId, inspeccionId, detalle = null) => {
     console.info(texto)
 };
 
+const obtenerNombreUsuarioPorId = async (authHeader, userId) => {
+    const parsedId = Number(userId);
+    if (!Number.isInteger(parsedId) || parsedId <= 0) return null;
+
+    try {
+        const resp = await axios.get(
+            `${AUTH_URL}/api/users/public/${parsedId}`,
+            { headers: { Authorization: authHeader } }
+        );
+        const user = resp?.data || null;
+        return user?.nombre_completo || user?.correo || null;
+    } catch (err) {
+        console.warn(`No se pudo resolver nombre de usuario ${parsedId}:`, err.message);
+        return null;
+    }
+};
+
 const obtenerTecnicoConMenorCarga = async (authHeader, departamento, municipio) => {
     try {
         const params = new URLSearchParams();
@@ -117,23 +134,11 @@ const getPlagasSugeridasPorInspeccion = async (lotes) => {
         rows = await queryAsync(
             `SELECT DISTINCT p.id, p.nombre_comun, p.nivel_riesgo
              FROM plagas p
-                         LEFT JOIN plaga_cultivos pc ON pc.plaga_id = p.id
+             LEFT JOIN plaga_cultivos pc ON pc.plaga_id = p.id
              WHERE p.estado = 'activo'
-                             AND (
-                                        p.especie_id IN (?)
-                                        OR pc.cultivo_id IN (?)
-                             )
+             AND pc.cultivo_id IN (?)
              ORDER BY p.nombre_comun ASC`,
-                        [especieIds, especieIds]
-        );
-    }
-
-    if (rows.length === 0) {
-        rows = await queryAsync(
-            `SELECT id, nombre_comun, nivel_riesgo
-             FROM plagas
-             WHERE estado = 'activo'
-             ORDER BY nombre_comun ASC`
+            [especieIds]
         );
     }
 
@@ -152,6 +157,13 @@ const sincronizarLotesInspeccion = async (inspeccion, authHeader) => {
             especie_id: l.especie_id ? Number(l.especie_id) : null,
             especie_nombre: l.especie_nombre || null,
             cultivo_id: l.cultivo_id ? Number(l.cultivo_id) : null,
+            area_ha: l.area_ha ? Number(l.area_ha) : null,
+            predio_nombre: l.predio_nombre || null,
+            predio_id: l.predio_id ? Number(l.predio_id) : null,
+            predio_municipio: l.predio_municipio || null,
+            predio_departamento: l.predio_departamento || null,
+            predio_vereda: l.predio_vereda || null,
+            fecha_siembra: l.fecha_siembra || null,
         }])
     );
 
@@ -202,6 +214,12 @@ const sincronizarLotesInspeccion = async (inspeccion, authHeader) => {
         especie_id: lotesMetaMap.get(Number(loteEval.lote_id))?.especie_id || null,
         especie_nombre: lotesMetaMap.get(Number(loteEval.lote_id))?.especie_nombre || null,
         cultivo_id: lotesMetaMap.get(Number(loteEval.lote_id))?.cultivo_id || null,
+        area_ha: lotesMetaMap.get(Number(loteEval.lote_id))?.area_ha || null,
+        predio_id: lotesMetaMap.get(Number(loteEval.lote_id))?.predio_id || null,
+        predio_municipio: lotesMetaMap.get(Number(loteEval.lote_id))?.predio_municipio || null,
+        predio_departamento: lotesMetaMap.get(Number(loteEval.lote_id))?.predio_departamento || null,
+        predio_vereda: lotesMetaMap.get(Number(loteEval.lote_id))?.predio_vereda || null,
+        fecha_siembra: lotesMetaMap.get(Number(loteEval.lote_id))?.fecha_siembra || null,
         plagas: plagasPorLoteEval[loteEval.id] || [],
     }));
 
@@ -314,11 +332,14 @@ const calcularMetricasConsolidadas = async (inspeccionId) => {
 };
 
 const solicitarInspeccion = async (req, res) => {
-    const { lote_id, fecha_solicitada } = req.body;
+    const { lugar_produccion_id, fecha_solicitada } = req.body;
     const productor_id = req.user.id;
+    let productor_nombre = req.user.nombre_completo || req.user.nombre || req.user.correo || null;
 
-    if (!lote_id || !fecha_solicitada) {
-        return res.status(400).json({ message: 'Debes enviar lote_id y fecha_solicitada' });
+    const lugarId = Number(lugar_produccion_id);
+
+    if (!Number.isInteger(lugarId) || lugarId <= 0 || !fecha_solicitada) {
+        return res.status(400).json({ message: 'Debes enviar lugar_produccion_id y fecha_solicitada' });
     }
 
     const hoy = new Date();
@@ -332,24 +353,13 @@ const solicitarInspeccion = async (req, res) => {
     }
 
     try {
-        let lote;
-        try {
-            const loteResp = await axios.get(
-                `${PRODUCTION_URL}/api/lots/${lote_id}`,
-                { headers: { Authorization: req.headers.authorization } }
-            );
-            lote = loteResp.data;
-        } catch (e) {
-            return res.status(404).json({ message: 'Lote no encontrado o servicio de produccion no disponible' });
+        if (!productor_nombre) {
+            productor_nombre = await obtenerNombreUsuarioPorId(req.headers.authorization, productor_id);
         }
 
-        if (!lote || lote.estado !== 'activo') {
-            return res.status(400).json({ message: 'El lote seleccionado no esta en estado activo' });
-        }
-
-        const lugar_produccion_id = lote.lugar_produccion_id;
-        const loteCodigo = lote.codigo || null;
-        const predioNombre = lote.predio_nombre || null;
+        const lugar_produccion_id = lugarId;
+        const loteCodigo = null;
+        let predioNombre = null;
 
         let lugarDepto = null;
         let lugarMuni = null;
@@ -362,19 +372,26 @@ const solicitarInspeccion = async (req, res) => {
             lugarDepto = lugarResp.data?.departamento || null;
             lugarMuni = lugarResp.data?.municipio || null;
             lugarNombre = lugarResp.data?.nombre || null;
+            predioNombre = lugarResp.data?.predio_principal || null;
+
+            const lotesLugar = Array.isArray(lugarResp.data?.lotes) ? lugarResp.data.lotes : [];
+            const lotesActivos = lotesLugar.filter((l) => l.estado === 'activo');
+            if (lotesActivos.length === 0) {
+                return res.status(400).json({ message: 'El lugar seleccionado no tiene lotes activos para inspeccionar' });
+            }
         } catch (e) {
-            console.warn('No se pudo obtener ubicacion del lugar:', e.message);
+            return res.status(404).json({ message: 'Lugar de produccion no encontrado o servicio de produccion no disponible' });
         }
 
         const activas = await queryAsync(
             `SELECT id FROM inspecciones
-             WHERE lote_id = ? AND estado IN ('pendiente', 'en_proceso')`,
-            [lote_id]
+             WHERE lugar_produccion_id = ? AND estado IN ('pendiente', 'en_proceso')`,
+            [lugar_produccion_id]
         );
 
         if (activas.length > 0) {
             return res.status(400).json({
-                message: 'Ya existe una inspeccion pendiente o en proceso para este lote. Espera a que finalice.',
+                message: 'Ya existe una inspeccion pendiente o en proceso para este lugar de produccion. Espera a que finalice.',
             });
         }
 
@@ -385,13 +402,14 @@ const solicitarInspeccion = async (req, res) => {
 
         const result = await queryAsync(
             `INSERT INTO inspecciones
-             (lugar_produccion_id, lote_id, productor_id, asistente_id, estado, fecha_solicitud, fecha_programada,
+             (lugar_produccion_id, lote_id, productor_id, productor_nombre, asistente_id, estado, fecha_solicitud, fecha_programada,
               departamento, municipio, lote_codigo, lugar_nombre, predio_nombre)
-             VALUES (?, ?, ?, ?, 'pendiente', NOW(), ?, ?, ?, ?, ?, ?)`,
+             VALUES (?, ?, ?, ?, ?, 'pendiente', NOW(), ?, ?, ?, ?, ?, ?)`,
             [
                 lugar_produccion_id,
-                lote_id,
+                null,
                 productor_id,
+                productor_nombre,
                 asistente_id,
                 fecha_solicitada,
                 lugarDepto,
@@ -405,7 +423,7 @@ const solicitarInspeccion = async (req, res) => {
         if (sinAsistente) {
             console.warn(
                 `[NOTIFICAR_ADMIN] Inspeccion ${result.insertId} requiere asignacion manual. ` +
-                `Lote ${lote_id} (${lugarMuni || 'N/A'} - ${lugarDepto || 'N/A'}). ` +
+                `Lugar ${lugar_produccion_id} (${lugarMuni || 'N/A'} - ${lugarDepto || 'N/A'}). ` +
                 `Motivo: ${motivoSinAsignacion || 'sin_tecnicos_zona'}`
             );
         }
@@ -417,8 +435,8 @@ const solicitarInspeccion = async (req, res) => {
         return res.status(201).json({
             message: sinAsistente ? mensajeSinAsignacion : 'Inspeccion solicitada y asignada automaticamente.',
             inspeccion_id: result.insertId,
-            lote_id,
-            lote_codigo: lote.codigo,
+            lote_id: null,
+            lote_codigo: null,
             predio_nombre: predioNombre,
             lugar_produccion_id,
             lugar_nombre: lugarNombre,
@@ -774,9 +792,24 @@ const getDetalleRealizacion = async (req, res) => {
         }
 
         const detalle = await sincronizarLotesInspeccion(inspeccion, req.headers.authorization);
-        const total = detalle.lotes.length;
-        const evaluados = detalle.lotes.filter((l) => l.evaluado).length;
-        const plagasSugeridas = await getPlagasSugeridasPorInspeccion(detalle.lotes);
+        const lotesSolicitados = detalle.lotes;
+        let productorNombre = inspeccion.productor_nombre || null;
+
+        if (!productorNombre) {
+            productorNombre = await obtenerNombreUsuarioPorId(req.headers.authorization, inspeccion.productor_id);
+            if (productorNombre) {
+                await queryAsync(
+                    `UPDATE inspecciones
+                     SET productor_nombre = ?
+                     WHERE id = ?`,
+                    [productorNombre, inspeccion.id]
+                );
+            }
+        }
+        
+        const total = lotesSolicitados.length;
+        const evaluados = lotesSolicitados.filter((l) => l.evaluado).length;
+        const plagasSugeridas = await getPlagasSugeridasPorInspeccion(lotesSolicitados);
 
         let informe = null;
         try {
@@ -799,9 +832,11 @@ const getDetalleRealizacion = async (req, res) => {
                 observaciones_generales: inspeccion.observaciones_generales,
                 recomendaciones: inspeccion.recomendaciones,
                 concepto_tecnico: inspeccion.concepto_tecnico,
+                productor_nombre: productorNombre || 'No registrado',
+                lote_id_solicitado: inspeccion.lote_id || null,
             },
             lugar: detalle.lugar,
-            lotes: detalle.lotes,
+            lotes: lotesSolicitados,
             resumen: {
                 total_lotes: total,
                 lotes_evaluados: evaluados,
@@ -814,6 +849,68 @@ const getDetalleRealizacion = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Error al obtener detalle de realizacion' });
+    }
+};
+
+const asignarTecnicoManual = async (req, res) => {
+    const inspeccionId = Number(req.params.id);
+    const tecnicoId = Number(req.body.tecnico_id);
+
+    if (!Number.isInteger(inspeccionId) || inspeccionId <= 0) {
+        return res.status(400).json({ message: 'Id de inspeccion invalido' });
+    }
+
+    if (!Number.isInteger(tecnicoId) || tecnicoId <= 0) {
+        return res.status(400).json({ message: 'Debes enviar un tecnico_id valido' });
+    }
+
+    try {
+        const inspecciones = await queryAsync(
+            `SELECT id, estado
+             FROM inspecciones
+             WHERE id = ?`,
+            [inspeccionId]
+        );
+
+        if (inspecciones.length === 0) {
+            return res.status(404).json({ message: 'Inspeccion no encontrada' });
+        }
+
+        if (inspecciones[0].estado !== 'pendiente') {
+            return res.status(400).json({ message: 'Solo puedes reasignar inspecciones en estado pendiente' });
+        }
+
+        let tecnicoNombre = null;
+        try {
+            const tecnicoResp = await axios.get(
+                `${AUTH_URL}/api/users/${tecnicoId}`,
+                { headers: { Authorization: req.headers.authorization } }
+            );
+            const tecnico = tecnicoResp.data || null;
+            if (!tecnico || tecnico.rol !== 'tecnico') {
+                return res.status(400).json({ message: 'El usuario seleccionado no es un tecnico valido' });
+            }
+            tecnicoNombre = tecnico.nombre_completo || tecnico.nombre || tecnico.correo || null;
+        } catch (err) {
+            return res.status(400).json({ message: 'No se pudo validar el tecnico seleccionado' });
+        }
+
+        await queryAsync(
+            `UPDATE inspecciones
+             SET asistente_id = ?
+             WHERE id = ?`,
+            [tecnicoId, inspeccionId]
+        );
+
+        return res.json({
+            message: 'Tecnico asignado correctamente',
+            inspeccion_id: inspeccionId,
+            tecnico_id: tecnicoId,
+            tecnico_nombre: tecnicoNombre,
+        });
+    } catch (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Error al asignar tecnico manualmente' });
     }
 };
 
@@ -1031,23 +1128,28 @@ const guardarEvaluacionLote = async (req, res) => {
 const completarInspeccion = async (req, res) => {
     const asistente_id = req.user.id;
     const id = Number(req.params.id);
-if (!observaciones_generales || !String(observaciones_generales).trim()) {
-    return res.status(400).json({
-        message: 'Las observaciones generales son obligatorias para completar la inspección',
-    });
-}
+    const payload = req.body && typeof req.body === 'object' ? req.body : {};
+    const observaciones_generales = String(payload.observaciones_generales || '').trim();
+    const recomendaciones = String(payload.recomendaciones || '').trim();
+    const concepto_tecnico = String(payload.concepto_tecnico || '').trim();
 
-if (!recomendaciones || !String(recomendaciones).trim()) {
-    return res.status(400).json({
-        message: 'Las recomendaciones son obligatorias para completar la inspección',
-    });
-}
+    if (!observaciones_generales) {
+        return res.status(400).json({
+            message: 'Las observaciones generales son obligatorias para completar la inspeccion',
+        });
+    }
 
-if (!concepto_tecnico || !String(concepto_tecnico).trim()) {
-    return res.status(400).json({
-        message: 'El concepto técnico es obligatorio para completar la inspección',
-    });
-}
+    if (!recomendaciones) {
+        return res.status(400).json({
+            message: 'Las recomendaciones son obligatorias para completar la inspeccion',
+        });
+    }
+
+    if (!concepto_tecnico) {
+        return res.status(400).json({
+            message: 'El concepto tecnico es obligatorio para completar la inspeccion',
+        });
+    }
 
     if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ message: 'Id de inspeccion invalido' });
@@ -1106,9 +1208,9 @@ if (!concepto_tecnico || !String(concepto_tecnico).trim()) {
                  informe_json = ?
              WHERE id = ?`,
             [
-                observaciones_generales || null,
-                recomendaciones || null,
-                String(concepto_tecnico).trim(),
+                observaciones_generales,
+                recomendaciones,
+                concepto_tecnico,
                 metricas.porcentaje_infeccion_total,
                 metricas.nivel_riesgo,
                 JSON.stringify(informe),
@@ -1143,6 +1245,7 @@ module.exports = {
     getInspeccionesTecnico,
     getTecnicoDashboard,
     getDetalleRealizacion,
+    asignarTecnicoManual,
     iniciarInspeccion,
     guardarEvaluacionLote,
     completarInspeccion,

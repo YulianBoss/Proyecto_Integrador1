@@ -67,6 +67,7 @@ export const inspeccionesAPI = {
   misSolicitudes: (params) => axios.get(`${INSPECTION_URL}/api/inspections/mis-solicitudes`, { headers: getHeaders(), params }),
   getAll:         (params) => axios.get(`${INSPECTION_URL}/api/inspections`, { headers: getHeaders(), params }),
   getById:        (id)     => axios.get(`${INSPECTION_URL}/api/inspections/${id}`, { headers: getHeaders() }),
+  asignarTecnico: (id, data) => axios.patch(`${INSPECTION_URL}/api/inspections/${id}/asignar-tecnico`, data, { headers: getHeaders() }),
 }
 
 export const tecnicoAPI = {

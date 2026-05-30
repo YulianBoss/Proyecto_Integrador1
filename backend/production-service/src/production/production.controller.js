@@ -501,7 +501,7 @@ const getProductionForInspection = async (req, res) => {
 
     try {
         const lugarRows = await queryAsync(
-            `SELECT id, nombre, departamento, municipio, vereda_direccion,
+            `SELECT id, nombre, productor_id, departamento, municipio, vereda_direccion,
                     fecha_ultima_inspeccion, fecha_proxima_inspeccion
              FROM lugares_produccion
              WHERE id = ?`,
@@ -513,13 +513,19 @@ const getProductionForInspection = async (req, res) => {
         }
 
         const lotesRows = await queryAsync(
-            `SELECT l.id, l.codigo, l.estado,
+            `SELECT l.id, l.codigo, l.estado, l.area_ha,
+                    p.id AS predio_id,
                     p.nombre_identificacion AS predio_nombre,
+                    p.productor_id AS predio_productor_id,
+                    p.departamento AS predio_departamento,
+                    p.municipio AS predio_municipio,
+                    p.vereda_direccion AS predio_vereda,
                     c.id AS cultivo_id,
                     c.especie_id AS especie_id,
                     e.nombre AS especie_nombre,
                     c.variedad AS cultivo_variedad,
-                    c.estado AS cultivo_estado
+                    c.estado AS cultivo_estado,
+                    c.fecha_siembra
              FROM lotes l
              LEFT JOIN predios_produccion p ON p.id = l.predio_id
              LEFT JOIN cultivos c ON c.lote_id = l.id AND c.estado = 'activo'

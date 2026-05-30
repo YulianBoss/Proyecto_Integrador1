@@ -355,6 +355,40 @@ const updateUser = (req, res) => {
 };
 
 // ─────────────────────────────────────────────
+// 🔒 CUALQUIER ROL AUTENTICADO — PERFIL BÁSICO POR ID
+// Uso interno entre servicios para resolver nombres por id
+// ─────────────────────────────────────────────
+const getUserPublicById = (req, res) => {
+    const { id } = req.params;
+
+    const query = `
+        SELECT id, nombre_completo, correo, rol, estado
+        FROM usuarios
+        WHERE id = ?
+    `;
+
+    db.query(query, [id], (err, results) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).json({ message: 'Error al obtener usuario' });
+        }
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        const user = results[0];
+        return res.json({
+            id: user.id,
+            nombre_completo: user.nombre_completo,
+            correo: user.correo,
+            rol: user.rol,
+            estado: user.estado,
+        });
+    });
+};
+
+// ─────────────────────────────────────────────
 // 🔒 ADMIN — ACTIVAR / DESACTIVAR CUENTA
 // ─────────────────────────────────────────────
 const toggleUserStatus = (req, res) => {
@@ -412,6 +446,7 @@ module.exports = {
     login,
     getAllUsers,
     getUserById,
+    getUserPublicById,
     updateUser,
     toggleUserStatus,
     getTecnicosByLocation
