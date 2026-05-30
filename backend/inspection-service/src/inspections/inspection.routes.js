@@ -5,6 +5,7 @@ const {
     solicitarInspeccion,
     getMisSolicitudes,
     getDetalleSolicitud,
+    getInspecciones,
     getInspeccionesTecnico,
     getTecnicoDashboard,
     getDetalleRealizacion,
@@ -17,6 +18,7 @@ const { verifyToken, verifyProductor, verifyTecnico } = require('../middlewares/
 
 // ── Rutas del Productor ─────────────────────────────────────
 router.post('/solicitar',       verifyToken, verifyProductor, solicitarInspeccion);
+router.get('/',                verifyToken, getInspecciones);
 router.get('/mis-solicitudes',  verifyToken, verifyProductor, getMisSolicitudes);
 
 // ── Rutas del Técnico ───────────────────────────────────────

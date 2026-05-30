@@ -89,10 +89,10 @@ const obtenerTecnicoConMenorCarga = async (authHeader, departamento, municipio) 
     }
 };
 
-const verificarInspeccionTecnico = async (inspeccionId, tecnicoId, tecnicoDep = null, tecnicoMun = null) => {
+const verificarInspeccionTecnico = async (inspeccionId, tecnicoId) => {
     const rows = await queryAsync(
-        `SELECT * FROM inspecciones WHERE id = ? AND (asistente_id = ? OR (asistente_id IS NULL AND departamento = ? AND municipio = ?))`,
-        [inspeccionId, tecnicoId, tecnicoDep, tecnicoMun]
+        `SELECT * FROM inspecciones WHERE id = ? AND asistente_id = ?`,
+        [inspeccionId, tecnicoId]
     );
     return rows[0] || null;
 };
@@ -466,23 +466,75 @@ const getMisSolicitudes = async (req, res) => {
     }
 };
 
-const getDetalleSolicitud = async (req, res) => {
-    const { id } = req.params;
-    const productor_id = req.user.id;
+const getInspecciones = async (req, res) => {
+    const { id: userId, rol } = req.user;
+    const { estado } = req.query;
+
+    let query = `
+        SELECT id, lugar_produccion_id, lote_id, productor_id, asistente_id, estado,
+               fecha_solicitud, fecha_programada, fecha_inicio, fecha_cierre,
+               lote_codigo, lugar_nombre, predio_nombre,
+               observaciones_generales, recomendaciones, concepto_tecnico
+        FROM inspecciones
+        WHERE `;
+    const params = [];
+
+    if (rol === 'productor') {
+        query += 'productor_id = ?';
+        params.push(userId);
+    } else if (rol === 'tecnico') {
+        query += 'asistente_id = ?';
+        params.push(userId);
+    } else if (rol === 'admin') {
+        query += '1';
+    } else {
+        return res.status(403).json({ message: 'Acceso denegado: rol inválido para listar inspecciones' });
+    }
+
+    if (estado) {
+        query += ' AND estado = ?';
+        params.push(estado);
+    }
+
+    query += ' ORDER BY fecha_solicitud DESC';
 
     try {
-        const results = await queryAsync(
-            `SELECT id, lugar_produccion_id, asistente_id, estado,
-                    fecha_solicitud, fecha_programada, fecha_inicio, fecha_cierre,
-                    lote_id, lote_codigo, lugar_nombre, predio_nombre,
-                    observaciones_generales, recomendaciones, concepto_tecnico,
-                    porcentaje_infeccion_total, nivel_riesgo, informe_json
-             FROM inspecciones
-             WHERE id = ? AND productor_id = ?`,
-            [id, productor_id]
-        );
+        const results = await queryAsync(query, params);
+        res.json(results);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: 'Error al obtener inspecciones' });
+    }
+};
 
-        if (results.length === 0) return res.status(404).json({ message: 'Solicitud no encontrada' });
+const getDetalleSolicitud = async (req, res) => {
+    const { id } = req.params;
+    const { rol, id: userId } = req.user;
+
+    try {
+        let query = `SELECT id, lugar_produccion_id, asistente_id, estado,
+                            fecha_solicitud, fecha_programada, fecha_inicio, fecha_cierre,
+                            lote_id, lote_codigo, lugar_nombre, predio_nombre,
+                            observaciones_generales, recomendaciones, concepto_tecnico,
+                            porcentaje_infeccion_total, nivel_riesgo, informe_json
+                     FROM inspecciones
+                     WHERE id = ?`;
+        const params = [id];
+
+        if (rol === 'productor') {
+            query += ' AND productor_id = ?';
+            params.push(userId);
+        } else if (rol === 'tecnico') {
+            query += ' AND asistente_id = ?';
+            params.push(userId);
+        } else if (rol !== 'admin') {
+            return res.status(403).json({ message: 'Acceso denegado: rol inválido para ver esta inspección' });
+        }
+
+        const results = await queryAsync(query, params);
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'Inspección no encontrada o no tiene permiso para verla' });
+        }
 
         const detalle = results[0];
         if (detalle.informe_json) {
@@ -501,8 +553,6 @@ const getDetalleSolicitud = async (req, res) => {
 
 const getInspeccionesTecnico = async (req, res) => {
     const asistente_id = req.user.id;
-    const tecnicoDep = req.user.departamento || null;
-    const tecnicoMun = req.user.municipio || null;
     const { estado } = req.query;
 
     let query = `
@@ -522,12 +572,9 @@ const getInspeccionesTecnico = async (req, res) => {
                  WHERE il.inspeccion_id = i.id AND il.fecha_evaluacion IS NOT NULL
                ) AS lotes_evaluados
         FROM inspecciones i
-        WHERE (
-            i.asistente_id = ?
-            OR (i.asistente_id IS NULL AND i.departamento = ? AND i.municipio = ?)
-        )
+        WHERE i.asistente_id = ?
     `;
-    const params = [asistente_id, tecnicoDep, tecnicoMun];
+    const params = [asistente_id];
 
     if (estado) {
         query += ' AND i.estado = ?';
@@ -553,15 +600,13 @@ const getInspeccionesTecnico = async (req, res) => {
 
 const getTecnicoDashboard = async (req, res) => {
     const asistente_id = req.user.id;
-    const tecnicoDep = req.user.departamento || null;
-    const tecnicoMun = req.user.municipio || null;
 
     try {
         const inspecciones = await queryAsync(
             `SELECT id, estado, porcentaje_infeccion_total, nivel_riesgo, fecha_solicitud, fecha_programada, fecha_cierre, observaciones_generales, recomendaciones, concepto_tecnico, lote_codigo, lugar_nombre
              FROM inspecciones
-             WHERE (asistente_id = ? OR (asistente_id IS NULL AND departamento = ? AND municipio = ?))`,
-            [asistente_id, tecnicoDep, tecnicoMun]
+             WHERE asistente_id = ?`,
+            [asistente_id]
         );
 
         const counts = inspecciones.reduce((acc, item) => {
@@ -584,9 +629,9 @@ const getTecnicoDashboard = async (req, res) => {
             `SELECT COUNT(*) AS total
              FROM inspeccion_lotes il
              JOIN inspecciones i ON i.id = il.inspeccion_id
-             WHERE (i.asistente_id = ? OR (i.asistente_id IS NULL AND i.departamento = ? AND i.municipio = ?))
+             WHERE i.asistente_id = ?
                AND il.fecha_evaluacion IS NOT NULL`,
-            [asistente_id, tecnicoDep, tecnicoMun]
+            [asistente_id]
         );
 
         const plagaRecurrenteRows = await queryAsync(
@@ -594,11 +639,11 @@ const getTecnicoDashboard = async (req, res) => {
              FROM inspeccion_lote_plagas p
              JOIN inspeccion_lotes il ON il.id = p.inspeccion_lote_id
              JOIN inspecciones i ON i.id = il.inspeccion_id
-             WHERE (i.asistente_id = ? OR (i.asistente_id IS NULL AND i.departamento = ? AND i.municipio = ?))
+             WHERE i.asistente_id = ?
              GROUP BY p.plaga_nombre
              ORDER BY apariciones DESC, total_afectadas DESC
              LIMIT 1`,
-            [asistente_id, tecnicoDep, tecnicoMun]
+            [asistente_id]
         );
 
         const plaga_recurrente = plagaRecurrenteRows[0] || null;
@@ -606,34 +651,34 @@ const getTecnicoDashboard = async (req, res) => {
         const nuevasAsignaciones = await queryAsync(
             `SELECT id, estado, lote_codigo, lugar_nombre, fecha_solicitud
              FROM inspecciones
-             WHERE (asistente_id = ? OR (asistente_id IS NULL AND departamento = ? AND municipio = ?))
+             WHERE asistente_id = ?
                AND fecha_solicitud >= DATE_SUB(NOW(), INTERVAL 3 DAY)
              ORDER BY fecha_solicitud DESC
              LIMIT 5`,
-            [asistente_id, tecnicoDep, tecnicoMun]
+            [asistente_id]
         );
 
         const proximasVencer = await queryAsync(
             `SELECT id, estado, lote_codigo, lugar_nombre, fecha_programada
              FROM inspecciones
-             WHERE (asistente_id = ? OR (asistente_id IS NULL AND departamento = ? AND municipio = ?))
+             WHERE asistente_id = ?
                AND estado IN ('pendiente', 'en_proceso')
                AND fecha_programada IS NOT NULL
                AND fecha_programada <= DATE_ADD(CURDATE(), INTERVAL 3 DAY)
              ORDER BY fecha_programada ASC
              LIMIT 5`,
-            [asistente_id, tecnicoDep, tecnicoMun]
+            [asistente_id]
         );
 
         const recientesCompletadas = await queryAsync(
             `SELECT id, estado, lote_codigo, lugar_nombre, fecha_cierre
              FROM inspecciones
-             WHERE (asistente_id = ? OR (asistente_id IS NULL AND departamento = ? AND municipio = ?))
+             WHERE asistente_id = ?
                AND estado IN ('completada', 'sin_lotes_inspeccionables')
                AND fecha_cierre >= DATE_SUB(NOW(), INTERVAL 7 DAY)
              ORDER BY fecha_cierre DESC
              LIMIT 5`,
-            [asistente_id, tecnicoDep, tecnicoMun]
+            [asistente_id]
         );
 
         res.json({
@@ -667,8 +712,6 @@ const getTecnicoDashboard = async (req, res) => {
 
 const getDetalleRealizacion = async (req, res) => {
     const asistente_id = req.user.id;
-    const tecnicoDep = req.user.departamento || null;
-    const tecnicoMun = req.user.municipio || null;
     const inspeccionId = Number(req.params.id);
 
     if (!Number.isInteger(inspeccionId) || inspeccionId <= 0) {
@@ -676,7 +719,7 @@ const getDetalleRealizacion = async (req, res) => {
     }
 
     try {
-        const inspeccion = await verificarInspeccionTecnico(inspeccionId, asistente_id, tecnicoDep, tecnicoMun);
+        const inspeccion = await verificarInspeccionTecnico(inspeccionId, asistente_id);
         if (!inspeccion) {
             return res.status(404).json({ message: 'Inspeccion no encontrada o no asignada al tecnico' });
         }
@@ -727,8 +770,6 @@ const getDetalleRealizacion = async (req, res) => {
 
 const iniciarInspeccion = async (req, res) => {
     const asistente_id = req.user.id;
-    const tecnicoDep = req.user.departamento || null;
-    const tecnicoMun = req.user.municipio || null;
     const id = Number(req.params.id);
 
     if (!Number.isInteger(id) || id <= 0) {
@@ -736,7 +777,7 @@ const iniciarInspeccion = async (req, res) => {
     }
 
     try {
-        const insp = await verificarInspeccionTecnico(id, asistente_id, tecnicoDep, tecnicoMun);
+        const insp = await verificarInspeccionTecnico(id, asistente_id);
         if (!insp) return res.status(404).json({ message: 'Inspeccion no encontrada' });
 
         if (insp.estado === 'sin_lotes_inspeccionables') {
@@ -786,8 +827,6 @@ const iniciarInspeccion = async (req, res) => {
 
 const guardarEvaluacionLote = async (req, res) => {
     const asistente_id = req.user.id;
-    const tecnicoDep = req.user.departamento || null;
-    const tecnicoMun = req.user.municipio || null;
     const inspeccionId = Number(req.params.id);
     const loteId = Number(req.params.loteId);
     const totalPlantas = Number(req.body.total_plantas_inspeccionadas);
@@ -824,7 +863,7 @@ const guardarEvaluacionLote = async (req, res) => {
     }
 
     try {
-        const inspeccion = await verificarInspeccionTecnico(inspeccionId, asistente_id, tecnicoDep, tecnicoMun);
+        const inspeccion = await verificarInspeccionTecnico(inspeccionId, asistente_id);
         if (!inspeccion) return res.status(404).json({ message: 'Inspeccion no encontrada o no asignada al tecnico' });
 
         if (!['pendiente', 'en_proceso'].includes(inspeccion.estado)) {
@@ -942,21 +981,31 @@ const guardarEvaluacionLote = async (req, res) => {
 
 const completarInspeccion = async (req, res) => {
     const asistente_id = req.user.id;
-    const tecnicoDep = req.user.departamento || null;
-    const tecnicoMun = req.user.municipio || null;
     const id = Number(req.params.id);
-    const { observaciones_generales, recomendaciones, concepto_tecnico } = req.body;
+if (!observaciones_generales || !String(observaciones_generales).trim()) {
+    return res.status(400).json({
+        message: 'Las observaciones generales son obligatorias para completar la inspección',
+    });
+}
 
-    if (!concepto_tecnico || !String(concepto_tecnico).trim()) {
-        return res.status(400).json({ message: 'El concepto tecnico es obligatorio para completar la inspeccion' });
-    }
+if (!recomendaciones || !String(recomendaciones).trim()) {
+    return res.status(400).json({
+        message: 'Las recomendaciones son obligatorias para completar la inspección',
+    });
+}
+
+if (!concepto_tecnico || !String(concepto_tecnico).trim()) {
+    return res.status(400).json({
+        message: 'El concepto técnico es obligatorio para completar la inspección',
+    });
+}
 
     if (!Number.isInteger(id) || id <= 0) {
         return res.status(400).json({ message: 'Id de inspeccion invalido' });
     }
 
     try {
-        const insp = await verificarInspeccionTecnico(id, asistente_id, tecnicoDep, tecnicoMun);
+        const insp = await verificarInspeccionTecnico(id, asistente_id);
         if (!insp) return res.status(404).json({ message: 'Inspeccion no encontrada' });
 
         if (!['pendiente', 'en_proceso'].includes(insp.estado)) {
@@ -977,7 +1026,7 @@ const completarInspeccion = async (req, res) => {
 
         if (total === 0) {
             return res.status(400).json({ message: 'No hay lotes activos asociados para completar la inspeccion' });
-        }
+        }   
 
         if (evaluados < total) {
             return res.status(400).json({
@@ -1040,6 +1089,7 @@ const completarInspeccion = async (req, res) => {
 module.exports = {
     solicitarInspeccion,
     getMisSolicitudes,
+    getInspecciones, 
     getDetalleSolicitud,
     getInspeccionesTecnico,
     getTecnicoDashboard,

@@ -61,17 +61,33 @@ const register = async (req, res) => {
         : null;
 
     try {
-        const checkQuery = `SELECT id FROM usuarios WHERE correo = ?`;
+const checkQuery = `
+    SELECT id, correo, telefono, num_identificacion 
+    FROM usuarios 
+    WHERE correo = ? OR telefono = ? OR num_identificacion = ?
+`;
 
-        db.query(checkQuery, [correoLimpio], async (err, results) => {
-            if (err) {
-                console.error(err);
-                return res.status(500).json({ message: 'Error del servidor' });
-            }
+db.query(checkQuery, [correoLimpio, telefonoLimpio, identificacionLimpia], async (err, results) => {
+    if (err) {
+        console.error(err);
+        return res.status(500).json({ message: 'Error del servidor' });
+    }
 
-            if (results.length > 0) {
-                return res.status(400).json({ message: 'El correo ya está registrado' });
-            }
+    if (results.length > 0) {
+        const existente = results[0];
+
+        if (existente.correo === correoLimpio) {
+            return res.status(409).json({ message: 'El correo electrónico ya está registrado en el sistema' });
+        }
+
+        if (existente.telefono === telefonoLimpio) {
+            return res.status(409).json({ message: 'El teléfono ya está registrado en el sistema' });
+        }
+
+        if (existente.num_identificacion === identificacionLimpia) {
+            return res.status(409).json({ message: 'El número de identificación ya está registrado en el sistema' });
+        }
+    }
 
             const hashedPassword = await bcrypt.hash(password, 10);
 
