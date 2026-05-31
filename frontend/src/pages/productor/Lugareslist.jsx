@@ -705,10 +705,8 @@ export default function LugaresList() {
                   <tr>
                     <th>Lugar</th>
                     <th>Ubicacion derivada</th>
-                    <th>Area (ha)</th>
                     <th>Registro ICA</th>
                     <th>Predio principal</th>
-                    <th>Predios asociados</th>
                     <th>Proxima inspeccion</th>
                     <th>Estado</th>
                     <th>Acciones</th>
@@ -724,10 +722,8 @@ export default function LugaresList() {
                       <tr key={lugar.id}>
                         <td><strong>{lugar.nombre}</strong></td>
                         <td className="p-td-muted">{lugar.municipio}, {lugar.departamento}</td>
-                        <td className="p-td-muted">{lugar.area_total_ha}</td>
                         <td className="p-td-muted">{lugar.numero_registro_ica}</td>
                         <td className="p-td-muted">{nombrePredioPrincipal}</td>
-                        <td className="p-td-muted">{lugar.predios_asociados || nombrePredioPrincipal}</td>
                         <td>
                           {proxima
                             ? <span className={proximaCls}>{proxima.toLocaleDateString('es-CO')}{dias !== null && dias <= 7 && dias >= 0 ? ` (${dias}d)` : ''}</span>

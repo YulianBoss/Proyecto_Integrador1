@@ -4,9 +4,9 @@
    :root {
     --pl-nav-h: 68px;
     
-    /* Paleta SIGFITO Institucional */
-    --pl-green-dark: #113324;
-    --pl-green-mid: #1b4d36;
+    /* Paleta SIGFITO Institucional — alineada con el banner del dashboard */
+    --pl-green-dark: #0a2f1d;
+    --pl-green-mid: #164e35;
     --pl-green-light: #22c55e;
     
     /* Escala de Grises / Corporativos (Slate) */

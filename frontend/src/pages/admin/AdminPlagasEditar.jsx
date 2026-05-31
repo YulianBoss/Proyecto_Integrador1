@@ -346,7 +346,7 @@ export default function AdminPlagasEditar() {
 
         .main-grid {
           display: grid;
-          grid-template-columns: 1fr 1.3fr;
+          grid-template-columns: 340px 1fr;
           gap: 24px;
         }
 
@@ -413,11 +413,19 @@ export default function AdminPlagasEditar() {
           font-size: 0.95rem;
           color: #1e293b;
           margin: 0 0 4px 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 180px;
         }
         .item-scientific {
-          font-size: 0.8rem;
+          font-size: 0.75rem;
           color: #64748b;
           margin: 0;
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          max-width: 180px;
         }
         .item-badges {
           display: flex;
@@ -536,11 +544,12 @@ export default function AdminPlagasEditar() {
         }
         .info-card-value {
           display: flex;
-          align-items: center;
+          align-items: flex-start;
           gap: 8px;
           font-weight: 700;
-          font-size: 0.9rem;
+          font-size: 0.85rem;
           color: #0f172a;
+          overflow: hidden;
         }
         .status-dot {
           width: 10px;
@@ -672,14 +681,19 @@ export default function AdminPlagasEditar() {
 
         .selected-crops-bar {
           display: flex;
-          align-items: center;
-          justify-content: space-between;
+          flex-direction: column;
+          gap: 10px;
           padding: 12px 16px;
           background: white;
           border: 1px solid #e2e8f0;
           border-top: none;
           border-radius: 0 0 8px 8px;
           margin-top: -1px;
+        }
+        .selected-crops-bar-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
         }
         .selected-count {
           font-size: 0.8rem;
@@ -688,10 +702,8 @@ export default function AdminPlagasEditar() {
         }
         .chips-container {
           display: flex;
-          gap: 8px;
+          gap: 6px;
           flex-wrap: wrap;
-          flex: 1;
-          margin: 0 16px;
         }
         .crop-chip {
           background: #ecfdf5;
@@ -955,24 +967,24 @@ export default function AdminPlagasEditar() {
                 <div className="info-card">
                   <span className="info-card-title">ESTADO EN BD</span>
                   <div className="info-card-value">
-                    <div className={`status-dot ${detalle.estado}`}></div>
+                    <div className={`status-dot ${detalle.estado}`} style={{ flexShrink: 0, marginTop: '4px' }}></div>
                     {detalle.estado.toUpperCase()}
                   </div>
                 </div>
                 <div className="info-card">
                   <span className="info-card-title">NIVEL DE RIESGO</span>
                   <div className="info-card-value">
-                    <div className={`status-dot ${detalle.nivel_riesgo}`}></div>
+                    <div className={`status-dot ${detalle.nivel_riesgo}`} style={{ flexShrink: 0, marginTop: '4px' }}></div>
                     {detalle.nivel_riesgo.toUpperCase()}
                   </div>
                 </div>
                 <div className="info-card">
                   <span className="info-card-title">RELACIÓN DE CULTIVOS ACTUAL</span>
-                  <div className="info-card-value" style={{ fontSize: '0.8rem', fontWeight: '600' }}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#045e54" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0 }}>
+                  <div className="info-card-value" style={{ fontSize: '0.78rem', fontWeight: '600', flexWrap: 'wrap', lineHeight: '1.5' }}>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#045e54" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flexShrink: 0, marginTop: '2px' }}>
                       <path d="M12 22c4.97-4.97 4.97-11.03 0-16-4.97 4.97-4.97 11.03 0 16z"></path>
                     </svg>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    <span style={{ overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                       {detalle.cultivos_asociados?.map(c => c.nombre).join(', ') || 'Ninguno'}
                     </span>
                   </div>
@@ -1073,7 +1085,13 @@ export default function AdminPlagasEditar() {
                 </div>
                 
                 <div className="selected-crops-bar">
-                  <span className="selected-count">Cultivos seleccionados ({form.cultivo_ids.length})</span>
+                  <div className="selected-crops-bar-top">
+                    <span className="selected-count">Cultivos seleccionados ({form.cultivo_ids.length})</span>
+                    <button className="btn-clear-all" onClick={clearSelectedCrops}>
+                      Limpiar todo
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+                  </div>
                   <div className="chips-container">
                     {selectedCropsData.map(c => (
                       <div key={c.id} className="crop-chip">
@@ -1082,10 +1100,6 @@ export default function AdminPlagasEditar() {
                       </div>
                     ))}
                   </div>
-                  <button className="btn-clear-all" onClick={clearSelectedCrops}>
-                    Limpiar todo
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                  </button>
                 </div>
               </div>
 
